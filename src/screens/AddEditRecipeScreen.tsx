@@ -3,8 +3,7 @@ import {
   StyleSheet, View, Text, TextInput, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { File, Paths } from 'expo-file-system';
-import * as Crypto from 'expo-crypto';
+import { generateId } from '../utils/uuid';
 import { colors } from '../constants/colors';
 import { useRecipeStore } from '../store/recipeStore';
 import { useCategoryStore } from '../store/categoryStore';
@@ -73,12 +72,7 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
       quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      const filename = `recipe_${Crypto.randomUUID()}.jpg`;
-      const source = new File(asset.uri);
-      const dest = new File(Paths.document, filename);
-      source.copy(dest);
-      setImageUri(dest.uri);
+      setImageUri(result.assets[0].uri);
     }
   };
 

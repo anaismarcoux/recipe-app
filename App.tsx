@@ -5,14 +5,14 @@ import { PaperProvider } from 'react-native-paper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import RootNavigator from './src/navigation/RootNavigator';
-import { getDatabase } from './src/db/database';
+import { initDatabase } from './src/db/database';
 import { colors } from './src/constants/colors';
 
 export default function App() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    getDatabase().then(() => setReady(true));
+    initDatabase().then(() => setReady(true));
   }, []);
 
   if (!ready) {

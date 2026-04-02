@@ -1,26 +1,20 @@
-import { getDatabase } from './database';
+import { getIngredients, saveIngredients } from './database';
 import { Ingredient } from '../types';
 
 export async function getIngredientsByRecipe(recipeId: string): Promise<Ingredient[]> {
-  const db = await getDatabase();
-  return db.getAllAsync<Ingredient>(
-    'SELECT * FROM ingredients WHERE recipeId = ? ORDER BY sortOrder ASC',
-    recipeId
-  );
+  const ingredients = await getIngredients();
+  return ingredients
+    .filter(ing => ing.recipeId === recipeId)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
-export async function replaceIngredients(recipeId: string, ingredients: Ingredient[]): Promise<void> {
-  const db = await getDatabase();
-  await db.runAsync('DELETE FROM ingredients WHERE recipeId = ?', recipeId);
-  for (const ing of ingredients) {
-    await db.runAsync(
-      'INSERT INTO ingredients (id, recipeId, name, amount, unit, calories, sortOrder) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      ing.id, ing.recipeId, ing.name, ing.amount, ing.unit, ing.calories, ing.sortOrder
-    );
-  }
+export async function replaceIngredients(recipeId: string, newIngredients: Ingredient[]): Promise<void> {
+  const ingredients = await getIngredients();
+  const filtered = ingredients.filter(ing => ing.recipeId !== recipeId);
+  await saveIngredients([...filtered, ...newIngredients]);
 }
 
 export async function deleteIngredientsByRecipe(recipeId: string): Promise<void> {
-  const db = await getDatabase();
-  await db.runAsync('DELETE FROM ingredients WHERE recipeId = ?', recipeId);
+  const ingredients = await getIngredients();
+  await saveIngredients(ingredients.filter(ing => ing.recipeId !== recipeId));
 }

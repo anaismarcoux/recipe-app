@@ -1,48 +1,42 @@
-import { getDatabase } from './database';
+import { getRecipes, saveRecipes, getIngredients, saveIngredients } from './database';
 import { Recipe } from '../types';
 
 export async function getAllRecipes(): Promise<Recipe[]> {
-  const db = await getDatabase();
-  return db.getAllAsync<Recipe>('SELECT * FROM recipes ORDER BY updatedAt DESC');
+  const recipes = await getRecipes();
+  return recipes.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 export async function getRecipesByCategory(categoryId: string): Promise<Recipe[]> {
-  const db = await getDatabase();
-  return db.getAllAsync<Recipe>(
-    'SELECT * FROM recipes WHERE categoryId = ? ORDER BY updatedAt DESC',
-    categoryId
-  );
+  const recipes = await getRecipes();
+  return recipes
+    .filter(r => r.categoryId === categoryId)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 export async function getRecipeById(id: string): Promise<Recipe | null> {
-  const db = await getDatabase();
-  return db.getFirstAsync<Recipe>('SELECT * FROM recipes WHERE id = ?', id);
+  const recipes = await getRecipes();
+  return recipes.find(r => r.id === id) || null;
 }
 
 export async function insertRecipe(recipe: Recipe): Promise<void> {
-  const db = await getDatabase();
-  await db.runAsync(
-    `INSERT INTO recipes (id, categoryId, title, imageUri, steps, cookTimeMinutes, notes, yieldAmount, yieldUnit, totalWeightGrams, createdAt, updatedAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    recipe.id, recipe.categoryId, recipe.title, recipe.imageUri, recipe.steps,
-    recipe.cookTimeMinutes, recipe.notes, recipe.yieldAmount, recipe.yieldUnit,
-    recipe.totalWeightGrams, recipe.createdAt, recipe.updatedAt
-  );
+  const recipes = await getRecipes();
+  recipes.push(recipe);
+  await saveRecipes(recipes);
 }
 
 export async function updateRecipe(recipe: Recipe): Promise<void> {
-  const db = await getDatabase();
-  await db.runAsync(
-    `UPDATE recipes SET categoryId = ?, title = ?, imageUri = ?, steps = ?, cookTimeMinutes = ?,
-     notes = ?, yieldAmount = ?, yieldUnit = ?, totalWeightGrams = ?, updatedAt = ?
-     WHERE id = ?`,
-    recipe.categoryId, recipe.title, recipe.imageUri, recipe.steps, recipe.cookTimeMinutes,
-    recipe.notes, recipe.yieldAmount, recipe.yieldUnit, recipe.totalWeightGrams,
-    recipe.updatedAt, recipe.id
-  );
+  const recipes = await getRecipes();
+  const index = recipes.findIndex(r => r.id === recipe.id);
+  if (index !== -1) {
+    recipes[index] = recipe;
+    await saveRecipes(recipes);
+  }
 }
 
 export async function deleteRecipe(id: string): Promise<void> {
-  const db = await getDatabase();
-  await db.runAsync('DELETE FROM recipes WHERE id = ?', id);
+  const recipes = await getRecipes();
+  await saveRecipes(recipes.filter(r => r.id !== id));
+  // Also delete associated ingredients
+  const ingredients = await getIngredients();
+  await saveIngredients(ingredients.filter(ing => ing.recipeId !== id));
 }

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { Recipe, Ingredient, RecipeWithIngredients } from '../types';
 import * as recipeRepo from '../db/recipeRepository';
 import * as ingredientRepo from '../db/ingredientRepository';
-import * as Crypto from 'expo-crypto';
+import { generateId } from '../utils/uuid';
 
 interface RecipeStore {
   recipes: Recipe[];
@@ -38,7 +38,7 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
 
   add: async (recipeData, ingredientData) => {
     const now = new Date().toISOString();
-    const recipeId = Crypto.randomUUID();
+    const recipeId = generateId();
     const recipe: Recipe = {
       ...recipeData,
       id: recipeId,
@@ -49,7 +49,7 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
 
     const ingredients: Ingredient[] = ingredientData.map((ing, i) => ({
       ...ing,
-      id: Crypto.randomUUID(),
+      id: generateId(),
       recipeId,
       sortOrder: i,
     }));
@@ -64,7 +64,7 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
 
     const ingredients: Ingredient[] = ingredientData.map((ing, i) => ({
       ...ing,
-      id: Crypto.randomUUID(),
+      id: generateId(),
       recipeId: recipe.id,
       sortOrder: i,
     }));

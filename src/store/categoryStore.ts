@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { Category } from '../types';
 import * as categoryRepo from '../db/categoryRepository';
-import { seedDefaultCategories } from '../db/database';
-import * as Crypto from 'expo-crypto';
+import { initDatabase } from '../db/database';
+import { generateId } from '../utils/uuid';
 
 interface CategoryStore {
   categories: Category[];
@@ -18,14 +18,14 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
   loading: true,
 
   load: async () => {
-    await seedDefaultCategories();
+    await initDatabase();
     const categories = await categoryRepo.getAllCategories();
     set({ categories, loading: false });
   },
 
   add: async (name: string, emoji: string) => {
     const category: Category = {
-      id: Crypto.randomUUID(),
+      id: generateId(),
       name,
       emoji,
       sortOrder: get().categories.length,

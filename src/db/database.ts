@@ -1,79 +1,47 @@
-import * as SQLite from 'expo-sqlite';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Category, Recipe, Ingredient } from '../types';
 
-let db: SQLite.SQLiteDatabase | null = null;
+const CATEGORIES_KEY = '@recipebook_categories';
+const RECIPES_KEY = '@recipebook_recipes';
+const INGREDIENTS_KEY = '@recipebook_ingredients';
 
-export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
-  if (db) return db;
-  db = await SQLite.openDatabaseAsync('recipebook.db');
-
-  await db.execAsync(`PRAGMA journal_mode = WAL;`);
-  await db.execAsync(`PRAGMA foreign_keys = ON;`);
-
-  await db.execAsync(`
-    CREATE TABLE IF NOT EXISTS categories (
-      id TEXT PRIMARY KEY NOT NULL,
-      name TEXT NOT NULL,
-      emoji TEXT NOT NULL DEFAULT '🍽️',
-      sortOrder INTEGER NOT NULL DEFAULT 0,
-      createdAt TEXT NOT NULL
-    );
-  `);
-
-  await db.execAsync(`
-    CREATE TABLE IF NOT EXISTS recipes (
-      id TEXT PRIMARY KEY NOT NULL,
-      categoryId TEXT NOT NULL,
-      title TEXT NOT NULL,
-      imageUri TEXT,
-      steps TEXT NOT NULL DEFAULT '',
-      cookTimeMinutes INTEGER,
-      notes TEXT,
-      yieldAmount REAL,
-      yieldUnit TEXT,
-      totalWeightGrams REAL,
-      createdAt TEXT NOT NULL,
-      updatedAt TEXT NOT NULL,
-      FOREIGN KEY (categoryId) REFERENCES categories(id) ON DELETE CASCADE
-    );
-  `);
-
-  await db.execAsync(`
-    CREATE TABLE IF NOT EXISTS ingredients (
-      id TEXT PRIMARY KEY NOT NULL,
-      recipeId TEXT NOT NULL,
-      name TEXT NOT NULL,
-      amount REAL NOT NULL DEFAULT 0,
-      unit TEXT NOT NULL DEFAULT 'g',
-      calories REAL NOT NULL DEFAULT 0,
-      sortOrder INTEGER NOT NULL DEFAULT 0,
-      FOREIGN KEY (recipeId) REFERENCES recipes(id) ON DELETE CASCADE
-    );
-  `);
-
-  return db;
+export async function getCategories(): Promise<Category[]> {
+  const data = await AsyncStorage.getItem(CATEGORIES_KEY);
+  return data ? JSON.parse(data) : [];
 }
 
-export async function seedDefaultCategories(): Promise<void> {
-  const database = await getDatabase();
-  const result = await database.getFirstAsync<{ count: number }>(
-    'SELECT COUNT(*) as count FROM categories'
-  );
+export async function saveCategories(categories: Category[]): Promise<void> {
+  await AsyncStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+}
 
-  if (result && result.count === 0) {
+export async function getRecipes(): Promise<Recipe[]> {
+  const data = await AsyncStorage.getItem(RECIPES_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+export async function saveRecipes(recipes: Recipe[]): Promise<void> {
+  await AsyncStorage.setItem(RECIPES_KEY, JSON.stringify(recipes));
+}
+
+export async function getIngredients(): Promise<Ingredient[]> {
+  const data = await AsyncStorage.getItem(INGREDIENTS_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+export async function saveIngredients(ingredients: Ingredient[]): Promise<void> {
+  await AsyncStorage.setItem(INGREDIENTS_KEY, JSON.stringify(ingredients));
+}
+
+export async function initDatabase(): Promise<void> {
+  const categories = await getCategories();
+  if (categories.length === 0) {
     const now = new Date().toISOString();
-    const defaults = [
-      { name: 'Breakfast', emoji: '🥣' },
-      { name: 'Soups', emoji: '🍲' },
-      { name: 'Curries', emoji: '🍛' },
-      { name: 'Desserts', emoji: '🍰' },
+    const defaults: Category[] = [
+      { id: 'default-breakfast', name: 'Breakfast', emoji: '🥣', sortOrder: 0, createdAt: now },
+      { id: 'default-soups', name: 'Soups', emoji: '🍲', sortOrder: 1, createdAt: now },
+      { id: 'default-curries', name: 'Curries', emoji: '🍛', sortOrder: 2, createdAt: now },
+      { id: 'default-desserts', name: 'Desserts', emoji: '🍰', sortOrder: 3, createdAt: now },
     ];
-
-    for (let i = 0; i < defaults.length; i++) {
-      const id = `default-${defaults[i].name.toLowerCase()}`;
-      await database.runAsync(
-        'INSERT INTO categories (id, name, emoji, sortOrder, createdAt) VALUES (?, ?, ?, ?, ?)',
-        id, defaults[i].name, defaults[i].emoji, i, now
-      );
-    }
+    await saveCategories(defaults);
   }
 }
