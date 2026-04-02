@@ -30,6 +30,9 @@
     },
     "experiments": {
       "baseUrl": "/recipe-app"
-    }
+    },
+    "plugins": [
+      "expo-sqlite"
+    ]
   }
 }
