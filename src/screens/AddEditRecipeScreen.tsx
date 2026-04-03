@@ -29,7 +29,7 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
   const [title, setTitle] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState(categoryId || '');
   const [imageUri, setImageUri] = useState<string | null>(null);
-
+  const [about, setAbout] = useState('');
   const [ingredients, setIngredients] = useState<IngredientInput[]>([emptyIngredient()]);
   const [steps, setSteps] = useState('');
   const [yieldAmount, setYieldAmount] = useState('');
@@ -46,7 +46,7 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
         setTitle(r.title);
         setSelectedCategoryId(r.categoryId);
         setImageUri(r.imageUri);
-
+        setAbout(r.about || '');
         setSteps(r.steps);
         setYieldAmount(r.yieldAmount?.toString() || '');
         setYieldUnit(r.yieldUnit || '');
@@ -114,6 +114,7 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
         categoryId: selectedCategoryId,
         title: title.trim(),
         imageUri,
+        about: about.trim() || null,
         steps: steps.trim(),
 
         notes: notes.trim() || null,
@@ -182,6 +183,15 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
           </Text>
         </TouchableOpacity>
 
+        <Text style={styles.label}>About</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          placeholder="Short description of the recipe..."
+          placeholderTextColor={colors.textSecondary}
+          multiline
+          value={about}
+          onChangeText={setAbout}
+        />
 
         <View style={styles.sectionHeader}>
           <Text style={styles.label}>Ingredients</Text>

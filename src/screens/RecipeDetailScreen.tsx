@@ -76,19 +76,15 @@ export default function RecipeDetailScreen({ route, navigation }: any) {
       <View style={styles.body}>
         <Text style={styles.title}>{recipe.title}</Text>
 
+        {recipe.about ? (
+          <Text style={styles.aboutText}>{recipe.about}</Text>
+        ) : null}
 
         {recipe.yieldAmount != null && (
           <Text style={styles.meta}>
             Makes: {recipe.yieldAmount} {recipe.yieldUnit || 'servings'}
           </Text>
         )}
-
-        <CalorieSummary
-          ingredients={recipe.ingredients}
-          yieldAmount={recipe.yieldAmount}
-          yieldUnit={recipe.yieldUnit}
-          totalWeightGrams={recipe.totalWeightGrams}
-        />
 
         {recipe.ingredients.length > 0 && (
           <>
@@ -122,6 +118,13 @@ export default function RecipeDetailScreen({ route, navigation }: any) {
             <Text style={styles.notesText}>{recipe.notes}</Text>
           </>
         ) : null}
+
+        <CalorieSummary
+          ingredients={recipe.ingredients}
+          yieldAmount={recipe.yieldAmount}
+          yieldUnit={recipe.yieldUnit}
+          totalWeightGrams={recipe.totalWeightGrams}
+        />
       </View>
     </ScrollView>
   );
@@ -161,6 +164,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: colors.text,
+    marginBottom: 8,
+  },
+  aboutText: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    lineHeight: 22,
     marginBottom: 8,
   },
   meta: {

@@ -11,6 +11,7 @@ export interface Recipe {
   categoryId: string;
   title: string;
   imageUri: string | null;
+  about: string | null;
   steps: string;
 
   notes: string | null;
