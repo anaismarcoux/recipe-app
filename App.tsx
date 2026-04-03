@@ -8,28 +8,6 @@ import RootNavigator from './src/navigation/RootNavigator';
 import { initDatabase } from './src/db/database';
 import { colors } from './src/constants/colors';
 
-const linking: any = {
-  prefixes: [],
-  config: {
-    screens: {
-      CategoriesTab: {
-        screens: {
-          Categories: '',
-          CategoryDetail: 'category/:categoryId',
-          RecipeDetail: 'recipe/:recipeId',
-          AddEditRecipe: 'add-recipe',
-        },
-      },
-      AllRecipesTab: {
-        screens: {
-          AllRecipes: 'all',
-          RecipeDetail: 'all/recipe/:recipeId',
-          AddEditRecipe: 'all/add-recipe',
-        },
-      },
-    },
-  },
-};
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -51,7 +29,7 @@ export default function App() {
   return (
     <View style={{ flex: 1 }}>
       <PaperProvider>
-        <NavigationContainer linking={linking}>
+        <NavigationContainer>
           <RootNavigator />
           <StatusBar style="auto" />
         </NavigationContainer>
