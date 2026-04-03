@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { PaperProvider } from 'react-native-paper';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { useFonts, Pacifico_400Regular } from '@expo-google-fonts/pacifico';
 import RootNavigator from './src/navigation/RootNavigator';
 import { initDatabase } from './src/db/database';
 import { colors } from './src/constants/colors';
@@ -32,12 +33,13 @@ const linking: any = {
 
 export default function App() {
   const [ready, setReady] = useState(false);
+  const [fontsLoaded] = useFonts({ Pacifico_400Regular });
 
   useEffect(() => {
     initDatabase().then(() => setReady(true));
   }, []);
 
-  if (!ready) {
+  if (!ready || !fontsLoaded) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={colors.primary} />
