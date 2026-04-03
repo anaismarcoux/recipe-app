@@ -31,6 +31,10 @@ jobs:
 
       - run: npx expo export --platform web
 
+      - name: Add web app manifest to HTML
+        run: |
+          sed -i 's|</head>|<link rel="manifest" href="/recipe-app/manifest.json" /><meta name="apple-mobile-web-app-capable" content="yes" /><meta name="apple-mobile-web-app-title" content="My Recipes" /><meta name="theme-color" content="#4CAF78" /></head>|' dist/index.html
+
       - uses: actions/configure-pages@v4
 
       - uses: actions/upload-pages-artifact@v3
