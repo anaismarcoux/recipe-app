@@ -22,9 +22,7 @@ export default function RecipeCard({ recipe, onPress, totalCalories }: Props) {
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={2}>{recipe.title}</Text>
         <View style={styles.meta}>
-          {recipe.cookTimeMinutes != null && (
-            <Text style={styles.metaText}>{recipe.cookTimeMinutes} min</Text>
-          )}
+
           {totalCalories != null && totalCalories > 0 && (
             <Text style={styles.calorieBadge}>{totalCalories} kcal</Text>
           )}

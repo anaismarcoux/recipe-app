@@ -76,9 +76,6 @@ export default function RecipeDetailScreen({ route, navigation }: any) {
       <View style={styles.body}>
         <Text style={styles.title}>{recipe.title}</Text>
 
-        {recipe.cookTimeMinutes != null && (
-          <Text style={styles.meta}>Cook time: {recipe.cookTimeMinutes} min</Text>
-        )}
 
         {recipe.yieldAmount != null && (
           <Text style={styles.meta}>

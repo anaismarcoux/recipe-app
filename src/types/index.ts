@@ -12,7 +12,7 @@ export interface Recipe {
   title: string;
   imageUri: string | null;
   steps: string;
-  cookTimeMinutes: number | null;
+
   notes: string | null;
   yieldAmount: number | null;
   yieldUnit: string | null;
