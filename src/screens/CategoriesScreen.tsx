@@ -47,11 +47,11 @@ export default function CategoriesScreen({ navigation }: any) {
     }, [categories])
   );
 
-  const handleSave = async (name: string, emoji: string) => {
+  const handleSave = async (name: string, emoji: string, imageUri: string | null) => {
     if (editingCategory) {
-      await update({ ...editingCategory, name, emoji });
+      await update({ ...editingCategory, name, emoji, imageUri });
     } else {
-      await add(name, emoji);
+      await add(name, emoji, imageUri);
     }
     setModalVisible(false);
     setEditingCategory(null);
@@ -160,6 +160,16 @@ export default function CategoriesScreen({ navigation }: any) {
                 </TouchableOpacity>
               </View>
 
+              {category.imageUri && (
+                <TouchableOpacity
+                  style={styles.coverImageWrap}
+                  onLongPress={() => openEdit(category)}
+                  activeOpacity={0.9}
+                >
+                  <Image source={{ uri: category.imageUri }} style={styles.coverImage} />
+                </TouchableOpacity>
+              )}
+
               {recipes.length === 0 ? (
                 <View style={styles.emptyRow}>
                   <Text style={styles.emptyRowText}>No recipes yet — tap See All to add one</Text>
@@ -252,6 +262,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.primary,
     textDecorationLine: 'underline',
+  },
+  coverImageWrap: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  coverImage: {
+    width: '100%',
+    height: 160,
   },
   emptyRow: {
     paddingHorizontal: 16,

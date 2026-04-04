@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Modal, ScrollView, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 import { foodEmojis } from '../constants/emojis';
 import { Category } from '../types';
 
 interface Props {
   visible: boolean;
-  category: Category | null; // null = creating new
-  onSave: (name: string, emoji: string) => void;
+  category: Category | null;
+  onSave: (name: string, emoji: string, imageUri: string | null) => void;
   onDelete?: () => void;
   onClose: () => void;
 }
@@ -15,20 +17,33 @@ interface Props {
 export default function AddEditCategoryModal({ visible, category, onSave, onDelete, onClose }: Props) {
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState(foodEmojis[0]);
+  const [imageUri, setImageUri] = useState<string | null>(null);
 
   useEffect(() => {
     if (category) {
       setName(category.name);
       setEmoji(category.emoji);
+      setImageUri(category.imageUri);
     } else {
       setName('');
       setEmoji(foodEmojis[0]);
+      setImageUri(null);
     }
   }, [category, visible]);
 
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
+
   const handleSave = () => {
     if (name.trim()) {
-      onSave(name.trim(), emoji);
+      onSave(name.trim(), emoji, imageUri);
     }
   };
 
@@ -59,6 +74,23 @@ export default function AddEditCategoryModal({ visible, category, onSave, onDele
               </TouchableOpacity>
             ))}
           </ScrollView>
+
+          <Text style={styles.label}>Cover image</Text>
+          <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+            {imageUri ? (
+              <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Ionicons name="camera-outline" size={28} color={colors.textSecondary} />
+                <Text style={styles.imagePickerText}>Add Photo</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          {imageUri && (
+            <TouchableOpacity onPress={() => setImageUri(null)} style={styles.removeImage}>
+              <Text style={styles.removeImageText}>Remove image</Text>
+            </TouchableOpacity>
+          )}
 
           <View style={styles.buttons}>
             <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
@@ -117,7 +149,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   emojiScroll: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   emojiBtn: {
     width: 44,
@@ -136,9 +168,40 @@ const styles = StyleSheet.create({
   emojiText: {
     fontSize: 24,
   },
+  imagePicker: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  imagePlaceholder: {
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+    gap: 4,
+  },
+  imagePickerText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  imagePreview: {
+    width: '100%',
+    height: 140,
+  },
+  removeImage: {
+    alignSelf: 'flex-start',
+    marginBottom: 16,
+  },
+  removeImageText: {
+    fontSize: 13,
+    color: colors.error,
+  },
   buttons: {
     flexDirection: 'row',
     gap: 12,
+    marginTop: 8,
   },
   cancelBtn: {
     flex: 1,

@@ -2,6 +2,7 @@ export interface Category {
   id: string;
   name: string;
   emoji: string;
+  imageUri: string | null;
   sortOrder: number;
   createdAt: string;
 }

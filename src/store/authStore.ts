@@ -19,10 +19,10 @@ async function seedDefaults() {
   if (existing.length > 0) return;
   const now = new Date().toISOString();
   const defaults: Category[] = [
-    { id: generateId(), name: 'Breakfast', emoji: '\u{1F963}', sortOrder: 0, createdAt: now },
-    { id: generateId(), name: 'Soups', emoji: '\u{1F372}', sortOrder: 1, createdAt: now },
-    { id: generateId(), name: 'Curries', emoji: '\u{1F35B}', sortOrder: 2, createdAt: now },
-    { id: generateId(), name: 'Desserts', emoji: '\u{1F370}', sortOrder: 3, createdAt: now },
+    { id: generateId(), name: 'Breakfast', emoji: '\u{1F963}', imageUri: null, sortOrder: 0, createdAt: now },
+    { id: generateId(), name: 'Soups', emoji: '\u{1F372}', imageUri: null, sortOrder: 1, createdAt: now },
+    { id: generateId(), name: 'Curries', emoji: '\u{1F35B}', imageUri: null, sortOrder: 2, createdAt: now },
+    { id: generateId(), name: 'Desserts', emoji: '\u{1F370}', imageUri: null, sortOrder: 3, createdAt: now },
   ];
   for (const cat of defaults) {
     await categoryRepo.insertCategory(cat);

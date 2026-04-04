@@ -6,6 +6,7 @@ function toCategory(row: any): Category {
     id: row.id,
     name: row.name,
     emoji: row.emoji,
+    imageUri: row.image_uri || null,
     sortOrder: row.sort_order,
     createdAt: row.created_at,
   };
@@ -25,6 +26,7 @@ export async function insertCategory(category: Category): Promise<void> {
     id: category.id,
     name: category.name,
     emoji: category.emoji,
+    image_uri: category.imageUri,
     sort_order: category.sortOrder,
     created_at: category.createdAt,
   });
@@ -37,6 +39,7 @@ export async function updateCategory(category: Category): Promise<void> {
     .update({
       name: category.name,
       emoji: category.emoji,
+      image_uri: category.imageUri,
       sort_order: category.sortOrder,
     })
     .eq('id', category.id);
