@@ -3,8 +3,6 @@ import { Recipe, Ingredient, RecipeWithIngredients } from '../types';
 import * as recipeRepo from '../db/recipeRepository';
 import * as ingredientRepo from '../db/ingredientRepository';
 import { generateId } from '../utils/uuid';
-import { isLocalUri, uploadRecipeImage } from '../lib/supabase';
-
 interface RecipeStore {
   recipes: Recipe[];
   loading: boolean;
@@ -41,18 +39,8 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
     const now = new Date().toISOString();
     const recipeId = generateId();
 
-    let imageUri = recipeData.imageUri;
-    if (imageUri && isLocalUri(imageUri)) {
-      try {
-        imageUri = await uploadRecipeImage(imageUri, recipeId);
-      } catch {
-        // Keep local URI as fallback
-      }
-    }
-
     const recipe: Recipe = {
       ...recipeData,
-      imageUri,
       id: recipeId,
       createdAt: now,
       updatedAt: now,
@@ -71,16 +59,7 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
   },
 
   update: async (recipe, ingredientData) => {
-    let imageUri = recipe.imageUri;
-    if (imageUri && isLocalUri(imageUri)) {
-      try {
-        imageUri = await uploadRecipeImage(imageUri, recipe.id);
-      } catch {
-        // Keep local URI as fallback
-      }
-    }
-
-    const updated = { ...recipe, imageUri, updatedAt: new Date().toISOString() };
+    const updated = { ...recipe, updatedAt: new Date().toISOString() };
     await recipeRepo.updateRecipe(updated);
 
     const ingredients: Ingredient[] = ingredientData.map((ing, i) => ({

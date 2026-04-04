@@ -11,12 +11,6 @@ function toCategory(row: any): Category {
   };
 }
 
-async function getUserId(): Promise<string> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('Not authenticated');
-  return session.user.id;
-}
-
 export async function getAllCategories(): Promise<Category[]> {
   const { data, error } = await supabase
     .from('categories')
@@ -27,10 +21,8 @@ export async function getAllCategories(): Promise<Category[]> {
 }
 
 export async function insertCategory(category: Category): Promise<void> {
-  const userId = await getUserId();
   const { error } = await supabase.from('categories').insert({
     id: category.id,
-    user_id: userId,
     name: category.name,
     emoji: category.emoji,
     sort_order: category.sortOrder,

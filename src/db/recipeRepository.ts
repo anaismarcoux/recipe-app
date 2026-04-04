@@ -18,12 +18,6 @@ function toRecipe(row: any): Recipe {
   };
 }
 
-async function getUserId(): Promise<string> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('Not authenticated');
-  return session.user.id;
-}
-
 export async function getAllRecipes(): Promise<Recipe[]> {
   const { data, error } = await supabase
     .from('recipes')
@@ -54,10 +48,8 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
 }
 
 export async function insertRecipe(recipe: Recipe): Promise<void> {
-  const userId = await getUserId();
   const { error } = await supabase.from('recipes').insert({
     id: recipe.id,
-    user_id: userId,
     category_id: recipe.categoryId,
     title: recipe.title,
     image_uri: recipe.imageUri,

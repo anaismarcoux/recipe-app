@@ -13,7 +13,6 @@ import { Category, Recipe } from '../types';
 import AddEditCategoryModal from '../components/AddEditCategoryModal';
 import EmptyState from '../components/EmptyState';
 import * as recipeRepo from '../db/recipeRepository';
-import { uploadRecipeImage, isLocalUri } from '../lib/supabase';
 
 const CARD_WIDTH = 160;
 
@@ -94,17 +93,9 @@ export default function CategoriesScreen({ navigation }: any) {
       quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {
-      let newImageUri = result.assets[0].uri;
-      if (isLocalUri(newImageUri)) {
-        try {
-          newImageUri = await uploadRecipeImage(newImageUri, recipe.id);
-        } catch {
-          // Keep local URI as fallback
-        }
-      }
       const updated: Recipe = {
         ...recipe,
-        imageUri: newImageUri,
+        imageUri: result.assets[0].uri,
         updatedAt: new Date().toISOString(),
       };
       await recipeRepo.updateRecipe(updated);
