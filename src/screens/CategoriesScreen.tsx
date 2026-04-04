@@ -142,27 +142,28 @@ export default function CategoriesScreen({ navigation }: any) {
           const recipes = recipesByCategory[category.id] || [];
           return (
             <View key={category.id} style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <TouchableOpacity onLongPress={() => openEdit(category)}>
-                  <Text style={styles.sectionTitle}>
-                    {category.emoji} {category.name}
-                  </Text>
-                </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.sectionHeader}
+                onPress={() =>
+                  navigation.navigate('CategoryDetail', {
+                    categoryId: category.id,
+                    categoryName: category.name,
+                  })
+                }
+                onLongPress={() => openEdit(category)}
+              >
+                <Text style={styles.sectionTitle}>{category.name}</Text>
+              </TouchableOpacity>
+
+              {category.imageUri && (
                 <TouchableOpacity
+                  style={styles.coverImageWrap}
                   onPress={() =>
                     navigation.navigate('CategoryDetail', {
                       categoryId: category.id,
                       categoryName: category.name,
                     })
                   }
-                >
-                  <Text style={styles.seeAll}>See All</Text>
-                </TouchableOpacity>
-              </View>
-
-              {category.imageUri && (
-                <TouchableOpacity
-                  style={styles.coverImageWrap}
                   onLongPress={() => openEdit(category)}
                   activeOpacity={0.9}
                 >
@@ -172,7 +173,7 @@ export default function CategoriesScreen({ navigation }: any) {
 
               {recipes.length === 0 ? (
                 <View style={styles.emptyRow}>
-                  <Text style={styles.emptyRowText}>No recipes yet — tap See All to add one</Text>
+                  <Text style={styles.emptyRowText}>No recipes yet — tap the category to add one</Text>
                 </View>
               ) : (
                 <ScrollView
@@ -257,11 +258,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     color: colors.text,
-  },
-  seeAll: {
-    fontSize: 14,
-    color: colors.primary,
-    textDecorationLine: 'underline',
   },
   coverImageWrap: {
     marginHorizontal: 16,
