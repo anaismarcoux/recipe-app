@@ -13,6 +13,8 @@ import { Category, Recipe } from '../types';
 import AddEditCategoryModal from '../components/AddEditCategoryModal';
 import EmptyState from '../components/EmptyState';
 import * as recipeRepo from '../db/recipeRepository';
+import { uploadImage, isLocalUri } from '../lib/supabase';
+import { generateId } from '../utils/uuid';
 
 const CARD_WIDTH = 160;
 
@@ -48,10 +50,19 @@ export default function CategoriesScreen({ navigation }: any) {
   );
 
   const handleSave = async (name: string, emoji: string, imageUri: string | null) => {
+    let finalImageUri = imageUri;
+    if (imageUri && isLocalUri(imageUri)) {
+      try {
+        const path = `categories/${generateId()}.jpg`;
+        finalImageUri = await uploadImage(imageUri, path);
+      } catch {
+        // Keep local URI as fallback
+      }
+    }
     if (editingCategory) {
-      await update({ ...editingCategory, name, emoji, imageUri });
+      await update({ ...editingCategory, name, emoji, imageUri: finalImageUri });
     } else {
-      await add(name, emoji, imageUri);
+      await add(name, emoji, finalImageUri);
     }
     setModalVisible(false);
     setEditingCategory(null);
@@ -93,9 +104,18 @@ export default function CategoriesScreen({ navigation }: any) {
       quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {
+      let newImageUri = result.assets[0].uri;
+      if (isLocalUri(newImageUri)) {
+        try {
+          const path = `recipes/${recipe.id}.jpg`;
+          newImageUri = await uploadImage(newImageUri, path);
+        } catch {
+          // Keep local URI as fallback
+        }
+      }
       const updated: Recipe = {
         ...recipe,
-        imageUri: result.assets[0].uri,
+        imageUri: newImageUri,
         updatedAt: new Date().toISOString(),
       };
       await recipeRepo.updateRecipe(updated);

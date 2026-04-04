@@ -20,30 +20,19 @@ export function isLocalUri(uri: string | null): boolean {
   return !uri.startsWith('http://') && !uri.startsWith('https://');
 }
 
-export async function uploadRecipeImage(
-  uri: string,
-  recipeId: string,
-): Promise<string> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session) throw new Error('Not authenticated');
-
-  const userId = session.user.id;
-  const filePath = `${userId}/${recipeId}.jpg`;
-
+export async function uploadImage(uri: string, path: string): Promise<string> {
   const response = await fetch(uri);
   const blob = await response.blob();
 
   const { error } = await supabase.storage
     .from('recipe-images')
-    .upload(filePath, blob, { upsert: true, contentType: 'image/jpeg' });
+    .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
 
   if (error) throw error;
 
   const { data } = supabase.storage
     .from('recipe-images')
-    .getPublicUrl(filePath);
+    .getPublicUrl(path);
 
   return data.publicUrl;
 }
