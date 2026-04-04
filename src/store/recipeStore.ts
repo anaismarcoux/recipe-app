@@ -3,6 +3,7 @@ import { Recipe, Ingredient, RecipeWithIngredients } from '../types';
 import * as recipeRepo from '../db/recipeRepository';
 import * as ingredientRepo from '../db/ingredientRepository';
 import { generateId } from '../utils/uuid';
+import { isLocalUri, uploadRecipeImage } from '../lib/supabase';
 
 interface RecipeStore {
   recipes: Recipe[];
@@ -39,8 +40,19 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
   add: async (recipeData, ingredientData) => {
     const now = new Date().toISOString();
     const recipeId = generateId();
+
+    let imageUri = recipeData.imageUri;
+    if (imageUri && isLocalUri(imageUri)) {
+      try {
+        imageUri = await uploadRecipeImage(imageUri, recipeId);
+      } catch {
+        // Keep local URI as fallback
+      }
+    }
+
     const recipe: Recipe = {
       ...recipeData,
+      imageUri,
       id: recipeId,
       createdAt: now,
       updatedAt: now,
@@ -59,7 +71,16 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
   },
 
   update: async (recipe, ingredientData) => {
-    const updated = { ...recipe, updatedAt: new Date().toISOString() };
+    let imageUri = recipe.imageUri;
+    if (imageUri && isLocalUri(imageUri)) {
+      try {
+        imageUri = await uploadRecipeImage(imageUri, recipe.id);
+      } catch {
+        // Keep local URI as fallback
+      }
+    }
+
+    const updated = { ...recipe, imageUri, updatedAt: new Date().toISOString() };
     await recipeRepo.updateRecipe(updated);
 
     const ingredients: Ingredient[] = ingredientData.map((ing, i) => ({
@@ -76,6 +97,7 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
   },
 
   remove: async (id: string) => {
+    // Ingredients are cascade-deleted by Supabase foreign keys
     await recipeRepo.deleteRecipe(id);
     set({ recipes: get().recipes.filter(r => r.id !== id) });
   },

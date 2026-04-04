@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { Category } from '../types';
 import * as categoryRepo from '../db/categoryRepository';
-import { initDatabase } from '../db/database';
 import { generateId } from '../utils/uuid';
 
 interface CategoryStore {
@@ -18,7 +17,6 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
   loading: true,
 
   load: async () => {
-    await initDatabase();
     const categories = await categoryRepo.getAllCategories();
     set({ categories, loading: false });
   },
@@ -43,6 +41,7 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
   },
 
   remove: async (id: string) => {
+    // Recipes + ingredients are cascade-deleted by Supabase foreign keys
     await categoryRepo.deleteCategory(id);
     set({ categories: get().categories.filter(c => c.id !== id) });
   },

@@ -1,9 +1,11 @@
 import React from 'react';
+import { TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import CategoryStack from './CategoryStack';
 import AllRecipesStack from './AllRecipesStack';
 import { colors } from '../constants/colors';
+import { useAuthStore } from '../store/authStore';
 
 const Tab = createBottomTabNavigator();
 

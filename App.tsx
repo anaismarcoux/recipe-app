@@ -1,19 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { PaperProvider } from 'react-native-paper';
-import { View, Text, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { useFonts, Pacifico_400Regular } from '@expo-google-fonts/pacifico';
 import RootNavigator from './src/navigation/RootNavigator';
-import { initDatabase } from './src/db/database';
+import AuthScreen from './src/screens/AuthScreen';
+import { useAuthStore } from './src/store/authStore';
 import { colors } from './src/constants/colors';
 
 export default function App() {
-  const [ready, setReady] = useState(false);
+  const { session, loading: authLoading, initialize } = useAuthStore();
   const [fontsLoaded] = useFonts({ Pacifico_400Regular });
 
   useEffect(() => {
-    initDatabase().then(() => setReady(true));
+    initialize();
   }, []);
 
   useEffect(() => {
@@ -25,12 +26,20 @@ export default function App() {
     }
   });
 
-  if (!ready || !fontsLoaded) {
+  if (authLoading || !fontsLoaded) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading...</Text>
       </View>
+    );
+  }
+
+  if (!session) {
+    return (
+      <PaperProvider>
+        <AuthScreen />
+        <StatusBar style="auto" />
+      </PaperProvider>
     );
   }
 
@@ -52,9 +61,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
-  },
-  loadingText: {
-    marginTop: 12,
-    color: colors.textSecondary,
   },
 });
