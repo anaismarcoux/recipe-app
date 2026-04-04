@@ -252,7 +252,7 @@ export default function CategoriesScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#ECECEC',
   },
   loadingContainer: {
     flex: 1,
@@ -262,12 +262,15 @@ const styles = StyleSheet.create({
   },
   scroll: {
     paddingBottom: 80,
-    paddingTop: 8,
+    paddingTop: 12,
+    paddingHorizontal: 12,
+    gap: 14,
   },
   section: {
-    marginBottom: 0,
-    borderBottomWidth: 8,
-    borderBottomColor: '#ECECEC',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    overflow: 'hidden',
+    paddingBottom: 4,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -282,7 +285,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   coverImageWrap: {
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     marginBottom: 12,
     borderRadius: 12,
     overflow: 'hidden',
