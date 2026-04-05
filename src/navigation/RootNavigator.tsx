@@ -1,11 +1,10 @@
 import React from 'react';
-import { TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import CategoryStack from './CategoryStack';
 import AllRecipesStack from './AllRecipesStack';
+import GroceryStack from './GroceryStack';
 import { colors } from '../constants/colors';
-import { useAuthStore } from '../store/authStore';
 
 const Tab = createBottomTabNavigator();
 
@@ -38,6 +37,16 @@ export default function RootNavigator() {
           tabBarLabel: 'All Recipes',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="book-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="GroceryTab"
+        component={GroceryStack}
+        options={{
+          tabBarLabel: 'Grocery',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="cart-outline" size={size} color={color} />
           ),
         }}
       />

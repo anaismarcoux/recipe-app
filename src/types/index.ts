@@ -36,3 +36,18 @@ export interface Ingredient {
 export interface RecipeWithIngredients extends Recipe {
   ingredients: Ingredient[];
 }
+
+export interface GroceryCategory {
+  id: string;
+  name: string;
+  sortOrder: number;
+}
+
+export interface GroceryItem {
+  id: string;
+  categoryId: string;
+  name: string;
+  needed: boolean;
+  taken: boolean;
+  sortOrder: number;
+}
