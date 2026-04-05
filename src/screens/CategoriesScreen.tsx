@@ -252,7 +252,7 @@ export default function CategoriesScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ECECEC',
+    backgroundColor: '#FFFFFF',
   },
   loadingContainer: {
     flex: 1,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   section: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#ECECEC',
     borderRadius: 16,
     overflow: 'hidden',
     paddingBottom: 4,
