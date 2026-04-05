@@ -16,6 +16,10 @@ interface GroceryStore {
   removeItem: (id: string) => Promise<void>;
   cycleItem: (item: GroceryItem) => Promise<void>;
   resetWeek: () => Promise<void>;
+  moveCategoryUp: (id: string) => Promise<void>;
+  moveCategoryDown: (id: string) => Promise<void>;
+  moveItemUp: (item: GroceryItem) => Promise<void>;
+  moveItemDown: (item: GroceryItem) => Promise<void>;
 }
 
 export const useGroceryStore = create<GroceryStore>((set, get) => ({
@@ -105,5 +109,51 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
     set({
       items: get().items.map(i => ({ ...i, needed: false, taken: false })),
     });
+  },
+
+  moveCategoryUp: async (id: string) => {
+    const cats = [...get().categories].sort((a, b) => a.sortOrder - b.sortOrder);
+    const idx = cats.findIndex(c => c.id === id);
+    if (idx <= 0) return;
+    const prev = cats[idx - 1];
+    const curr = cats[idx];
+    const updatedCurr = { ...curr, sortOrder: prev.sortOrder };
+    const updatedPrev = { ...prev, sortOrder: curr.sortOrder };
+    await Promise.all([repo.updateGroceryCategory(updatedCurr), repo.updateGroceryCategory(updatedPrev)]);
+    set({ categories: get().categories.map(c => c.id === curr.id ? updatedCurr : c.id === prev.id ? updatedPrev : c) });
+  },
+
+  moveCategoryDown: async (id: string) => {
+    const cats = [...get().categories].sort((a, b) => a.sortOrder - b.sortOrder);
+    const idx = cats.findIndex(c => c.id === id);
+    if (idx < 0 || idx >= cats.length - 1) return;
+    const next = cats[idx + 1];
+    const curr = cats[idx];
+    const updatedCurr = { ...curr, sortOrder: next.sortOrder };
+    const updatedNext = { ...next, sortOrder: curr.sortOrder };
+    await Promise.all([repo.updateGroceryCategory(updatedCurr), repo.updateGroceryCategory(updatedNext)]);
+    set({ categories: get().categories.map(c => c.id === curr.id ? updatedCurr : c.id === next.id ? updatedNext : c) });
+  },
+
+  moveItemUp: async (item: GroceryItem) => {
+    const catItems = get().items.filter(i => i.categoryId === item.categoryId).sort((a, b) => a.sortOrder - b.sortOrder);
+    const idx = catItems.findIndex(i => i.id === item.id);
+    if (idx <= 0) return;
+    const prev = catItems[idx - 1];
+    const updatedCurr = { ...item, sortOrder: prev.sortOrder };
+    const updatedPrev = { ...prev, sortOrder: item.sortOrder };
+    await Promise.all([repo.updateGroceryItem(updatedCurr), repo.updateGroceryItem(updatedPrev)]);
+    set({ items: get().items.map(i => i.id === item.id ? updatedCurr : i.id === prev.id ? updatedPrev : i) });
+  },
+
+  moveItemDown: async (item: GroceryItem) => {
+    const catItems = get().items.filter(i => i.categoryId === item.categoryId).sort((a, b) => a.sortOrder - b.sortOrder);
+    const idx = catItems.findIndex(i => i.id === item.id);
+    if (idx < 0 || idx >= catItems.length - 1) return;
+    const next = catItems[idx + 1];
+    const updatedCurr = { ...item, sortOrder: next.sortOrder };
+    const updatedNext = { ...next, sortOrder: item.sortOrder };
+    await Promise.all([repo.updateGroceryItem(updatedCurr), repo.updateGroceryItem(updatedNext)]);
+    set({ items: get().items.map(i => i.id === item.id ? updatedCurr : i.id === next.id ? updatedNext : i) });
   },
 }));

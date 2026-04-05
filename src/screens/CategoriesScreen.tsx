@@ -19,8 +19,9 @@ import { generateId } from '../utils/uuid';
 const CARD_WIDTH = 160;
 
 export default function CategoriesScreen({ navigation }: any) {
-  const { categories, loading: catLoading, load, add, update, remove } = useCategoryStore();
+  const { categories, loading: catLoading, load, add, update, remove, moveUp, moveDown } = useCategoryStore();
   const [modalVisible, setModalVisible] = useState(false);
+  const [reorderMode, setReorderMode] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [recipesByCategory, setRecipesByCategory] = useState<Record<string, Recipe[]>>({});
 
@@ -162,18 +163,30 @@ export default function CategoriesScreen({ navigation }: any) {
           const recipes = recipesByCategory[category.id] || [];
           return (
             <View key={category.id} style={styles.section}>
-              <TouchableOpacity
-                style={styles.sectionHeader}
-                onPress={() =>
-                  navigation.navigate('CategoryDetail', {
-                    categoryId: category.id,
-                    categoryName: category.name,
-                  })
-                }
-                onLongPress={() => openEdit(category)}
-              >
-                <Text style={styles.sectionTitle}>{category.name}</Text>
-              </TouchableOpacity>
+              {reorderMode ? (
+                <View style={styles.sectionHeaderReorder}>
+                  <Text style={[styles.sectionTitle, { flex: 1 }]}>{category.name}</Text>
+                  <TouchableOpacity onPress={() => moveUp(category.id)} style={styles.arrowBtn}>
+                    <Ionicons name="chevron-up" size={22} color={colors.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => moveDown(category.id)} style={styles.arrowBtn}>
+                    <Ionicons name="chevron-down" size={22} color={colors.primary} />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.sectionHeader}
+                  onPress={() =>
+                    navigation.navigate('CategoryDetail', {
+                      categoryId: category.id,
+                      categoryName: category.name,
+                    })
+                  }
+                  onLongPress={() => openEdit(category)}
+                >
+                  <Text style={styles.sectionTitle}>{category.name}</Text>
+                </TouchableOpacity>
+              )}
 
               {category.imageUri && (
                 <TouchableOpacity
@@ -236,7 +249,16 @@ export default function CategoriesScreen({ navigation }: any) {
         })}
       </ScrollView>
 
-      <FAB icon="plus" style={styles.fab} onPress={openCreate} color="#fff" />
+      {reorderMode ? (
+        <FAB icon="check" style={styles.fab} onPress={() => setReorderMode(false)} color="#fff" />
+      ) : (
+        <>
+          <FAB icon="plus" style={styles.fab} onPress={openCreate} color="#fff" />
+          <TouchableOpacity style={styles.reorderFab} onPress={() => setReorderMode(true)}>
+            <Ionicons name="swap-vertical" size={22} color="#fff" />
+          </TouchableOpacity>
+        </>
+      )}
 
       <AddEditCategoryModal
         visible={modalVisible}
@@ -271,6 +293,15 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     paddingBottom: 4,
+  },
+  sectionHeaderReorder: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  arrowBtn: {
+    padding: 6,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -359,5 +390,16 @@ const styles = StyleSheet.create({
     bottom: 20,
     backgroundColor: colors.primary,
     borderRadius: 28,
+  },
+  reorderFab: {
+    position: 'absolute',
+    right: 24,
+    bottom: 80,
+    backgroundColor: colors.textSecondary,
+    borderRadius: 22,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

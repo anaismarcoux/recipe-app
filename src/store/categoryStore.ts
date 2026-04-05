@@ -10,6 +10,8 @@ interface CategoryStore {
   add: (name: string, emoji: string, imageUri?: string | null) => Promise<void>;
   update: (category: Category) => Promise<void>;
   remove: (id: string) => Promise<void>;
+  moveUp: (id: string) => Promise<void>;
+  moveDown: (id: string) => Promise<void>;
 }
 
 export const useCategoryStore = create<CategoryStore>((set, get) => ({
@@ -58,5 +60,29 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
     // Recipes + ingredients are cascade-deleted by Supabase foreign keys
     await categoryRepo.deleteCategory(id);
     set({ categories: get().categories.filter(c => c.id !== id) });
+  },
+
+  moveUp: async (id: string) => {
+    const cats = [...get().categories].sort((a, b) => a.sortOrder - b.sortOrder);
+    const idx = cats.findIndex(c => c.id === id);
+    if (idx <= 0) return;
+    const prev = cats[idx - 1];
+    const curr = cats[idx];
+    const updatedCurr = { ...curr, sortOrder: prev.sortOrder };
+    const updatedPrev = { ...prev, sortOrder: curr.sortOrder };
+    await Promise.all([categoryRepo.updateCategory(updatedCurr), categoryRepo.updateCategory(updatedPrev)]);
+    set({ categories: get().categories.map(c => c.id === curr.id ? updatedCurr : c.id === prev.id ? updatedPrev : c) });
+  },
+
+  moveDown: async (id: string) => {
+    const cats = [...get().categories].sort((a, b) => a.sortOrder - b.sortOrder);
+    const idx = cats.findIndex(c => c.id === id);
+    if (idx < 0 || idx >= cats.length - 1) return;
+    const next = cats[idx + 1];
+    const curr = cats[idx];
+    const updatedCurr = { ...curr, sortOrder: next.sortOrder };
+    const updatedNext = { ...next, sortOrder: curr.sortOrder };
+    await Promise.all([categoryRepo.updateCategory(updatedCurr), categoryRepo.updateCategory(updatedNext)]);
+    set({ categories: get().categories.map(c => c.id === curr.id ? updatedCurr : c.id === next.id ? updatedNext : c) });
   },
 }));
