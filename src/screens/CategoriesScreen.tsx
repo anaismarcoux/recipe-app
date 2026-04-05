@@ -7,6 +7,7 @@ import { FAB } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { colors } from '../constants/colors';
 import { useCategoryStore } from '../store/categoryStore';
 import { Category, Recipe } from '../types';
@@ -19,9 +20,8 @@ import { generateId } from '../utils/uuid';
 const CARD_WIDTH = 160;
 
 export default function CategoriesScreen({ navigation }: any) {
-  const { categories, loading: catLoading, load, add, update, remove, moveUp, moveDown } = useCategoryStore();
+  const { categories, loading: catLoading, load, add, update, remove, reorder } = useCategoryStore();
   const [modalVisible, setModalVisible] = useState(false);
-  const [reorderMode, setReorderMode] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [recipesByCategory, setRecipesByCategory] = useState<Record<string, Recipe[]>>({});
 
@@ -129,6 +129,91 @@ export default function CategoriesScreen({ navigation }: any) {
     }
   };
 
+  const sortedCategories = [...categories].sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const renderCategory = ({ item: category, drag, isActive }: RenderItemParams<Category>) => {
+    const recipes = recipesByCategory[category.id] || [];
+    return (
+      <ScaleDecorator>
+        <View style={[styles.section, isActive && styles.sectionDragging]}>
+          <TouchableOpacity
+            style={styles.sectionHeader}
+            onPress={() =>
+              navigation.navigate('CategoryDetail', {
+                categoryId: category.id,
+                categoryName: category.name,
+              })
+            }
+            onLongPress={drag}
+            delayLongPress={200}
+          >
+            <Text style={styles.sectionTitle}>{category.name}</Text>
+            <TouchableOpacity onPress={() => openEdit(category)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </TouchableOpacity>
+
+          {category.imageUri && (
+            <TouchableOpacity
+              style={styles.coverImageWrap}
+              onPress={() =>
+                navigation.navigate('CategoryDetail', {
+                  categoryId: category.id,
+                  categoryName: category.name,
+                })
+              }
+              onLongPress={() => openEdit(category)}
+              activeOpacity={0.9}
+            >
+              <Image source={{ uri: category.imageUri }} style={styles.coverImage} />
+            </TouchableOpacity>
+          )}
+
+          {recipes.length === 0 ? (
+            <View style={styles.emptyRow}>
+              <Text style={styles.emptyRowText}>No recipes yet — tap the category to add one</Text>
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.recipeRow}
+            >
+              {recipes.map(recipe => (
+                <TouchableOpacity
+                  key={recipe.id}
+                  style={styles.recipeCard}
+                  onPress={() => navigation.navigate('RecipeDetail', { recipeId: recipe.id })}
+                  activeOpacity={0.8}
+                >
+                  {recipe.imageUri ? (
+                    <Image source={{ uri: recipe.imageUri }} style={styles.recipeImage} />
+                  ) : (
+                    <View style={styles.recipeImagePlaceholder}>
+                      <Text style={styles.placeholderText}>No Photo</Text>
+                    </View>
+                  )}
+                  <TouchableOpacity
+                    style={styles.cameraButton}
+                    onPress={() => handleChangeImage(recipe)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="camera" size={14} color="#fff" />
+                  </TouchableOpacity>
+                  <View style={styles.recipeInfo}>
+                    <Text style={styles.recipeTitle} numberOfLines={2}>
+                      {recipe.title}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+      </ScaleDecorator>
+    );
+  };
+
   if (catLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -158,107 +243,16 @@ export default function CategoriesScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {categories.map(category => {
-          const recipes = recipesByCategory[category.id] || [];
-          return (
-            <View key={category.id} style={styles.section}>
-              {reorderMode ? (
-                <View style={styles.sectionHeaderReorder}>
-                  <Text style={[styles.sectionTitle, { flex: 1 }]}>{category.name}</Text>
-                  <TouchableOpacity onPress={() => moveUp(category.id)} style={styles.arrowBtn}>
-                    <Ionicons name="chevron-up" size={22} color={colors.primary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => moveDown(category.id)} style={styles.arrowBtn}>
-                    <Ionicons name="chevron-down" size={22} color={colors.primary} />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.sectionHeader}
-                  onPress={() =>
-                    navigation.navigate('CategoryDetail', {
-                      categoryId: category.id,
-                      categoryName: category.name,
-                    })
-                  }
-                  onLongPress={() => openEdit(category)}
-                >
-                  <Text style={styles.sectionTitle}>{category.name}</Text>
-                </TouchableOpacity>
-              )}
+      <DraggableFlatList
+        data={sortedCategories}
+        keyExtractor={(item) => item.id}
+        renderItem={renderCategory}
+        onDragEnd={({ data }) => reorder(data)}
+        contentContainerStyle={styles.scroll}
+        activationDistance={10}
+      />
 
-              {category.imageUri && (
-                <TouchableOpacity
-                  style={styles.coverImageWrap}
-                  onPress={() =>
-                    navigation.navigate('CategoryDetail', {
-                      categoryId: category.id,
-                      categoryName: category.name,
-                    })
-                  }
-                  onLongPress={() => openEdit(category)}
-                  activeOpacity={0.9}
-                >
-                  <Image source={{ uri: category.imageUri }} style={styles.coverImage} />
-                </TouchableOpacity>
-              )}
-
-              {recipes.length === 0 ? (
-                <View style={styles.emptyRow}>
-                  <Text style={styles.emptyRowText}>No recipes yet — tap the category to add one</Text>
-                </View>
-              ) : (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.recipeRow}
-                >
-                  {recipes.map(recipe => (
-                    <TouchableOpacity
-                      key={recipe.id}
-                      style={styles.recipeCard}
-                      onPress={() => navigation.navigate('RecipeDetail', { recipeId: recipe.id })}
-                      activeOpacity={0.8}
-                    >
-                      {recipe.imageUri ? (
-                        <Image source={{ uri: recipe.imageUri }} style={styles.recipeImage} />
-                      ) : (
-                        <View style={styles.recipeImagePlaceholder}>
-                          <Text style={styles.placeholderText}>No Photo</Text>
-                        </View>
-                      )}
-                      <TouchableOpacity
-                        style={styles.cameraButton}
-                        onPress={() => handleChangeImage(recipe)}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Ionicons name="camera" size={14} color="#fff" />
-                      </TouchableOpacity>
-                      <View style={styles.recipeInfo}>
-                        <Text style={styles.recipeTitle} numberOfLines={2}>
-                          {recipe.title}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              )}
-            </View>
-          );
-        })}
-      </ScrollView>
-
-      {reorderMode ? (
-        <FAB icon="check" style={styles.fab} onPress={() => setReorderMode(false)} color="#fff" />
-      ) : (
-        <>
-          <FAB icon="plus" style={styles.fab} onPress={openCreate} color="#fff" />
-          <TouchableOpacity style={styles.reorderFab} onPress={() => setReorderMode(true)}>
-            <Ionicons name="swap-vertical" size={22} color="#fff" />
-          </TouchableOpacity>
-        </>
-      )}
+      <FAB icon="plus" style={styles.fab} onPress={openCreate} color="#fff" />
 
       <AddEditCategoryModal
         visible={modalVisible}
@@ -294,14 +288,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingBottom: 4,
   },
-  sectionHeaderReorder: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  arrowBtn: {
-    padding: 6,
+  sectionDragging: {
+    opacity: 0.9,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -390,16 +383,5 @@ const styles = StyleSheet.create({
     bottom: 20,
     backgroundColor: colors.primary,
     borderRadius: 28,
-  },
-  reorderFab: {
-    position: 'absolute',
-    right: 24,
-    bottom: 80,
-    backgroundColor: colors.textSecondary,
-    borderRadius: 22,
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

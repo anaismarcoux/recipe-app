@@ -19,6 +19,8 @@ interface GroceryStore {
   moveCategoryUp: (id: string) => Promise<void>;
   moveCategoryDown: (id: string) => Promise<void>;
   moveItemUp: (item: GroceryItem) => Promise<void>;
+  reorderCategories: (data: GroceryCategory[]) => Promise<void>;
+  reorderItems: (categoryId: string, data: GroceryItem[]) => Promise<void>;
   moveItemDown: (item: GroceryItem) => Promise<void>;
 }
 
@@ -108,6 +110,24 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
     await repo.resetAllItems();
     set({
       items: get().items.map(i => ({ ...i, needed: false, taken: false })),
+    });
+  },
+
+  reorderCategories: async (data: GroceryCategory[]) => {
+    const updated = data.map((cat, i) => ({ ...cat, sortOrder: i }));
+    await Promise.all(updated.map(cat => repo.updateGroceryCategory(cat)));
+    set({ categories: updated });
+  },
+
+  reorderItems: async (categoryId: string, data: GroceryItem[]) => {
+    const updated = data.map((item, i) => ({ ...item, sortOrder: i }));
+    await Promise.all(updated.map(item => repo.updateGroceryItem(item)));
+    set({
+      items: get().items.map(i =>
+        i.categoryId === categoryId
+          ? updated.find(u => u.id === i.id) || i
+          : i
+      ),
     });
   },
 

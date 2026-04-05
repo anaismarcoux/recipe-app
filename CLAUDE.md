@@ -42,7 +42,7 @@ No test framework is configured. No linter is configured.
 - **UI library** is React Native Paper (Material Design)
 - **Theme colors** defined in `src/constants/colors.ts` — primary is `#4CAF78`
 - **TypeScript strict mode** is enabled
-- **Web compatibility:** gesture-handler and reanimated were removed for web support; avoid reintroducing them
+- **Drag-and-drop:** Uses `react-native-draggable-flatlist` with `react-native-gesture-handler` and `react-native-reanimated` for reordering
 - **Deep linking** is configured in `App.tsx` with path-based routing
 
 ## Deployment

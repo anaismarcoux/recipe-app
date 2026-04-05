@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { PaperProvider } from 'react-native-paper';
 import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts, Pacifico_400Regular } from '@expo-google-fonts/pacifico';
 import RootNavigator from './src/navigation/RootNavigator';
 import { colors } from './src/constants/colors';
@@ -29,14 +30,14 @@ export default function App() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <PaperProvider>
         <NavigationContainer>
           <RootNavigator />
           <StatusBar style="auto" />
         </NavigationContainer>
       </PaperProvider>
-    </View>
+    </GestureHandlerRootView>
   );
 }
 

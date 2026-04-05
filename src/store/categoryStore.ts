@@ -10,6 +10,7 @@ interface CategoryStore {
   add: (name: string, emoji: string, imageUri?: string | null) => Promise<void>;
   update: (category: Category) => Promise<void>;
   remove: (id: string) => Promise<void>;
+  reorder: (data: Category[]) => Promise<void>;
   moveUp: (id: string) => Promise<void>;
   moveDown: (id: string) => Promise<void>;
 }
@@ -60,6 +61,12 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
     // Recipes + ingredients are cascade-deleted by Supabase foreign keys
     await categoryRepo.deleteCategory(id);
     set({ categories: get().categories.filter(c => c.id !== id) });
+  },
+
+  reorder: async (data: Category[]) => {
+    const updated = data.map((cat, i) => ({ ...cat, sortOrder: i }));
+    await Promise.all(updated.map(cat => categoryRepo.updateCategory(cat)));
+    set({ categories: updated });
   },
 
   moveUp: async (id: string) => {
