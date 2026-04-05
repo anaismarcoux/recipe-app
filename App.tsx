@@ -18,8 +18,21 @@ export default function App() {
       if (!window.location.pathname.startsWith(base)) {
         window.history.replaceState(null, '', base + '/');
       }
+      // Prevent website-like scrolling behavior on web
+      const style = document.createElement('style');
+      style.textContent = `
+        html, body, #root {
+          height: 100%;
+          overflow: hidden;
+          overscroll-behavior: none;
+          -webkit-overflow-scrolling: touch;
+          position: fixed;
+          width: 100%;
+        }
+      `;
+      document.head.appendChild(style);
     }
-  });
+  }, []);
 
   if (!fontsLoaded) {
     return (
