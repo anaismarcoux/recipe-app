@@ -2,6 +2,7 @@ import React from 'react';
 import { Text } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import GroceryScreen from '../screens/GroceryScreen';
+import WeeklyListScreen from '../screens/WeeklyListScreen';
 import { colors } from '../constants/colors';
 
 const Stack = createNativeStackNavigator();
@@ -24,6 +25,11 @@ export default function GroceryStack() {
             </Text>
           ),
         }}
+      />
+      <Stack.Screen
+        name="WeeklyList"
+        component={WeeklyListScreen}
+        options={{ title: "This Week's List" }}
       />
     </Stack.Navigator>
   );

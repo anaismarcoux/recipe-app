@@ -10,7 +10,7 @@ import { colors } from '../constants/colors';
 import { useGroceryStore } from '../store/groceryStore';
 import { GroceryItem, GroceryCategory } from '../types';
 
-export default function GroceryScreen() {
+export default function GroceryScreen({ navigation }: any) {
   const {
     categories, items, loading, load,
     addCategory, updateCategory, removeCategory,
@@ -98,19 +98,30 @@ export default function GroceryScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {/* Summary bar */}
-      {(neededCount > 0 || takenCount > 0) && (
-        <View style={styles.summaryBar}>
-          <Text style={styles.summaryText}>
-            {neededCount > 0 ? `${neededCount} to buy` : ''}
-            {neededCount > 0 && takenCount > 0 ? '  ·  ' : ''}
-            {takenCount > 0 ? `${takenCount} done` : ''}
-          </Text>
-          <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
-            <Ionicons name="refresh" size={16} color={colors.primary} />
-            <Text style={styles.resetText}>Reset</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <View style={styles.summaryBar}>
+        <TouchableOpacity
+          style={styles.weekBtn}
+          onPress={() => navigation.navigate('WeeklyList')}
+        >
+          <Ionicons name="list" size={16} color="#fff" />
+          <Text style={styles.weekBtnText}>This Week</Text>
+        </TouchableOpacity>
+        {(neededCount > 0 || takenCount > 0) ? (
+          <>
+            <Text style={styles.summaryText}>
+              {neededCount > 0 ? `${neededCount} to buy` : ''}
+              {neededCount > 0 && takenCount > 0 ? '  ·  ' : ''}
+              {takenCount > 0 ? `${takenCount} done` : ''}
+            </Text>
+            <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
+              <Ionicons name="refresh" size={16} color={colors.primary} />
+              <Text style={styles.resetText}>Reset</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <Text style={styles.summaryText}>Tap items you need this week</Text>
+        )}
+      </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
         {categories.length === 0 && (
@@ -295,6 +306,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.text,
+  },
+  weekBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  weekBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#fff',
   },
   resetBtn: {
     flexDirection: 'row',
