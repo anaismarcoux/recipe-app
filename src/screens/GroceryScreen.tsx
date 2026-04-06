@@ -59,18 +59,28 @@ export default function GroceryScreen({ navigation }: any) {
   };
 
   const handleEditCategory = (cat: GroceryCategory) => {
-    Alert.prompt
-      ? Alert.prompt('Rename Category', '', [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Delete', style: 'destructive', onPress: () => handleDeleteCategory(cat) },
-          { text: 'Save', onPress: (val?: string) => {
-            if (val?.trim()) updateCategory({ ...cat, name: val.trim() });
-          }},
-        ], 'plain-text', cat.name)
-      : (() => {
-          const newName = prompt('Rename category:', cat.name);
-          if (newName?.trim()) updateCategory({ ...cat, name: newName.trim() });
-        })();
+    if (Platform.OS === 'web') {
+      const action = prompt(`"${cat.name}"\n\nType a new name to rename, or type DELETE to remove:`, cat.name);
+      if (action === null) return; // cancelled
+      if (action.trim().toUpperCase() === 'DELETE') {
+        if (confirm(`Delete "${cat.name}" and all its items?`)) removeCategory(cat.id);
+      } else if (action.trim()) {
+        updateCategory({ ...cat, name: action.trim() });
+      }
+    } else {
+      Alert.prompt
+        ? Alert.prompt('Rename Category', '', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Delete', style: 'destructive', onPress: () => handleDeleteCategory(cat) },
+            { text: 'Save', onPress: (val?: string) => {
+              if (val?.trim()) updateCategory({ ...cat, name: val.trim() });
+            }},
+          ], 'plain-text', cat.name)
+        : Alert.alert('Edit Category', cat.name, [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Delete', style: 'destructive', onPress: () => handleDeleteCategory(cat) },
+          ]);
+    }
   };
 
   const handleSaveEditItem = async () => {
