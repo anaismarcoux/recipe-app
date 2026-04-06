@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Modal, ScrollView, Image } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Modal, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
-import { foodEmojis } from '../constants/emojis';
 import { Category } from '../types';
 
 interface Props {
@@ -16,17 +15,14 @@ interface Props {
 
 export default function AddEditCategoryModal({ visible, category, onSave, onDelete, onClose }: Props) {
   const [name, setName] = useState('');
-  const [emoji, setEmoji] = useState(foodEmojis[0]);
   const [imageUri, setImageUri] = useState<string | null>(null);
 
   useEffect(() => {
     if (category) {
       setName(category.name);
-      setEmoji(category.emoji);
       setImageUri(category.imageUri);
     } else {
       setName('');
-      setEmoji(foodEmojis[0]);
       setImageUri(null);
     }
   }, [category, visible]);
@@ -43,7 +39,7 @@ export default function AddEditCategoryModal({ visible, category, onSave, onDele
 
   const handleSave = () => {
     if (name.trim()) {
-      onSave(name.trim(), emoji, imageUri);
+      onSave(name.trim(), '', imageUri);
     }
   };
 
@@ -61,19 +57,6 @@ export default function AddEditCategoryModal({ visible, category, onSave, onDele
             onChangeText={setName}
             autoFocus
           />
-
-          <Text style={styles.label}>Pick an emoji</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.emojiScroll}>
-            {foodEmojis.map(e => (
-              <TouchableOpacity
-                key={e}
-                style={[styles.emojiBtn, emoji === e && styles.emojiBtnActive]}
-                onPress={() => setEmoji(e)}
-              >
-                <Text style={styles.emojiText}>{e}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
 
           <Text style={styles.label}>Cover image</Text>
           <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
@@ -147,26 +130,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     marginBottom: 8,
-  },
-  emojiScroll: {
-    marginBottom: 16,
-  },
-  emojiBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-    backgroundColor: colors.background,
-  },
-  emojiBtnActive: {
-    backgroundColor: colors.primaryLight,
-    borderWidth: 2,
-    borderColor: colors.primary,
-  },
-  emojiText: {
-    fontSize: 24,
   },
   imagePicker: {
     borderWidth: 1,
