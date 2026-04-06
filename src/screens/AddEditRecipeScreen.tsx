@@ -172,7 +172,7 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
               style={[styles.categoryChip, selectedCategoryId === cat.id && styles.categoryChipActive]}
               onPress={() => setSelectedCategoryId(cat.id)}
             >
-              <Text style={styles.categoryChipText}>{cat.emoji} {cat.name}</Text>
+              <Text style={styles.categoryChipText}>{cat.name}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
