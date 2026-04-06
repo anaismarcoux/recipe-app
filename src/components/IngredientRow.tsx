@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, Text, ScrollView } from 'react-native';
+import {
+  StyleSheet, View, TextInput, TouchableOpacity, Text,
+  ScrollView, Modal,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 import { searchFoods, calculateCalories, FoodEntry } from '../data/foodDatabase';
+import { useCustomFoodStore } from '../store/customFoodStore';
 
 interface IngredientInput {
   name: string;
@@ -24,18 +29,32 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
   const [selectedFood, setSelectedFood] = useState<FoodEntry | null>(null);
   const ignoreNextSearch = useRef(false);
 
-  // Search as user types
+  // Custom food modal
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [customCal, setCustomCal] = useState('');
+  const [customGramsCup, setCustomGramsCup] = useState('');
+  const [customError, setCustomError] = useState('');
+
+  const { load: loadCustom, searchCustom, add: addCustom } = useCustomFoodStore();
+
+  useEffect(() => {
+    loadCustom();
+  }, []);
+
+  // Search both built-in and custom foods
   useEffect(() => {
     if (ignoreNextSearch.current) {
       ignoreNextSearch.current = false;
       return;
     }
-    const results = searchFoods(ingredient.name);
-    setSuggestions(results);
-    setShowSuggestions(results.length > 0 && ingredient.name.length >= 2);
+    const builtIn = searchFoods(ingredient.name);
+    const custom = searchCustom(ingredient.name);
+    const combined = [...custom, ...builtIn].slice(0, 8);
+    setSuggestions(combined);
+    setShowSuggestions(combined.length > 0 && ingredient.name.length >= 2);
   }, [ingredient.name]);
 
-  // Auto-calculate calories when amount, unit, or selected food changes
   useEffect(() => {
     if (!selectedFood) return;
     const amount = parseFloat(ingredient.amount);
@@ -85,6 +104,25 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
     onChange(update);
   };
 
+  const openAddModal = () => {
+    setCustomName(ingredient.name);
+    setCustomCal('');
+    setCustomGramsCup('');
+    setCustomError('');
+    setShowSuggestions(false);
+    setShowAddModal(true);
+  };
+
+  const handleSaveCustom = async () => {
+    const cal = parseFloat(customCal);
+    if (!customName.trim()) { setCustomError('Enter a name'); return; }
+    if (!cal || cal <= 0) { setCustomError('Enter calories per 100g'); return; }
+    const gpc = parseFloat(customGramsCup) || null;
+    const food = await addCustom(customName.trim(), cal, gpc);
+    setShowAddModal(false);
+    handleSelectFood(food);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.topRow}>
@@ -104,7 +142,6 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
               }
             }}
             onBlur={() => {
-              // Small delay so tap on suggestion registers
               setTimeout(() => setShowSuggestions(false), 200);
             }}
           />
@@ -121,12 +158,24 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
                     style={styles.suggestionItem}
                     onPress={() => handleSelectFood(food)}
                   >
-                    <Text style={styles.suggestionName}>{food.name}</Text>
+                    <Text style={styles.suggestionName}>
+                      {food.category === 'Custom' ? '* ' : ''}{food.name}
+                    </Text>
                     <Text style={styles.suggestionCal}>
                       {food.calPer100g} kcal/100g
                     </Text>
                   </TouchableOpacity>
                 ))}
+                {/* Add custom food button */}
+                <TouchableOpacity
+                  style={styles.addCustomBtn}
+                  onPress={openAddModal}
+                >
+                  <Ionicons name="add-circle-outline" size={16} color={colors.primary} />
+                  <Text style={styles.addCustomText}>
+                    Add "{ingredient.name}" as custom food
+                  </Text>
+                </TouchableOpacity>
               </ScrollView>
             </View>
           )}
@@ -169,6 +218,62 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
           onChangeText={calories => onChange({ ...ingredient, calories })}
         />
       </View>
+
+      {/* Add custom food modal */}
+      <Modal visible={showAddModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Add Custom Food</Text>
+
+            <Text style={styles.modalLabel}>Name</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={customName}
+              onChangeText={setCustomName}
+              placeholder="Food name"
+              placeholderTextColor={colors.textSecondary}
+              autoFocus
+            />
+
+            <Text style={styles.modalLabel}>Calories per 100g</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={customCal}
+              onChangeText={setCustomCal}
+              placeholder="e.g. 250"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="numeric"
+            />
+
+            <Text style={styles.modalLabel}>Grams per cup (optional)</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={customGramsCup}
+              onChangeText={setCustomGramsCup}
+              placeholder="e.g. 150"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="numeric"
+            />
+
+            {customError ? <Text style={styles.modalError}>{customError}</Text> : null}
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setShowAddModal(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalSaveBtn}
+                onPress={handleSaveCustom}
+              >
+                <Text style={styles.modalSaveText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -261,7 +366,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   suggestionsList: {
-    maxHeight: 180,
+    maxHeight: 220,
     backgroundColor: '#fff',
     borderRadius: 8,
     borderWidth: 1,
@@ -290,5 +395,86 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     marginLeft: 8,
+  },
+  addCustomBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  addCustomText: {
+    fontSize: 13,
+    color: colors.primary,
+    fontWeight: '500',
+    flex: 1,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 16,
+  },
+  modalLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginBottom: 4,
+    marginTop: 8,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 15,
+    color: colors.text,
+    backgroundColor: '#F5F5F5',
+  },
+  modalError: {
+    color: '#D32F2F',
+    fontSize: 13,
+    marginTop: 8,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 20,
+  },
+  modalCancelBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  modalCancelText: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  modalSaveBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  modalSaveText: {
+    fontSize: 15,
+    color: '#fff',
+    fontWeight: '700',
   },
 });
