@@ -48,10 +48,14 @@ export default function GroceryScreen({ navigation }: any) {
   };
 
   const handleDeleteCategory = (cat: GroceryCategory) => {
-    Alert.alert('Delete Category', `Delete "${cat.name}" and all its items?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => removeCategory(cat.id) },
-    ]);
+    if (Platform.OS === 'web') {
+      if (confirm(`Delete "${cat.name}" and all its items?`)) removeCategory(cat.id);
+    } else {
+      Alert.alert('Delete Category', `Delete "${cat.name}" and all its items?`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => removeCategory(cat.id) },
+      ]);
+    }
   };
 
   const handleEditCategory = (cat: GroceryCategory) => {
@@ -77,17 +81,25 @@ export default function GroceryScreen({ navigation }: any) {
   };
 
   const handleDeleteItem = (item: GroceryItem) => {
-    Alert.alert('Delete Item', `Delete "${item.name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => removeItem(item.id) },
-    ]);
+    if (Platform.OS === 'web') {
+      if (confirm(`Delete "${item.name}"?`)) removeItem(item.id);
+    } else {
+      Alert.alert('Delete Item', `Delete "${item.name}"?`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => removeItem(item.id) },
+      ]);
+    }
   };
 
   const handleReset = () => {
-    Alert.alert('Reset Week', 'Uncheck all items for next week?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Reset', onPress: resetWeek },
-    ]);
+    if (Platform.OS === 'web') {
+      if (confirm('Uncheck all items for next week?')) resetWeek();
+    } else {
+      Alert.alert('Reset Week', 'Uncheck all items for next week?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Reset', onPress: resetWeek },
+      ]);
+    }
   };
 
   const neededCount = items.filter(i => i.needed && !i.taken).length;
