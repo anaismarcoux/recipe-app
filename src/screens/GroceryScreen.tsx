@@ -25,6 +25,7 @@ export default function GroceryScreen({ navigation }: any) {
   const [editingItem, setEditingItem] = useState<GroceryItem | null>(null);
   const [editItemName, setEditItemName] = useState('');
   const [reorderMode, setReorderMode] = useState(false);
+  const [collapsedCats, setCollapsedCats] = useState<Record<string, boolean>>({});
 
   useFocusEffect(
     useCallback(() => {
@@ -172,115 +173,125 @@ export default function GroceryScreen({ navigation }: any) {
               ) : (
                 <TouchableOpacity
                   style={styles.catHeader}
+                  onPress={() => setCollapsedCats(prev => ({ ...prev, [cat.id]: !prev[cat.id] }))}
                   onLongPress={() => handleEditCategory(cat)}
-                  onPress={() => handleDeleteCategory(cat)}
                 >
-                  <Text style={styles.catTitle}>{cat.name}</Text>
+                  <Ionicons
+                    name={collapsedCats[cat.id] ? 'chevron-forward' : 'chevron-down'}
+                    size={18}
+                    color={colors.textSecondary}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={[styles.catTitle, { flex: 1 }]}>{cat.name}</Text>
                   <Text style={styles.catCount}>
                     {catItems.filter(i => i.needed && !i.taken).length}/{catItems.length}
                   </Text>
                 </TouchableOpacity>
               )}
 
-              {catItems.map(item => (
-                <View key={item.id} style={styles.itemRow}>
-                  {reorderMode ? (
-                    <View style={styles.itemReorderRow}>
-                      <Text style={[styles.itemName, { flex: 1 }]}>{item.name}</Text>
-                      <TouchableOpacity onPress={() => moveItemUp(item)} style={styles.arrowBtn}>
-                        <Ionicons name="chevron-up" size={18} color={colors.textSecondary} />
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => moveItemDown(item)} style={styles.arrowBtn}>
-                        <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
-                      </TouchableOpacity>
+              {!collapsedCats[cat.id] && (
+                <>
+                  {catItems.map(item => (
+                    <View key={item.id} style={styles.itemRow}>
+                      {reorderMode ? (
+                        <View style={styles.itemReorderRow}>
+                          <Text style={[styles.itemName, { flex: 1 }]}>{item.name}</Text>
+                          <TouchableOpacity onPress={() => moveItemUp(item)} style={styles.arrowBtn}>
+                            <Ionicons name="chevron-up" size={18} color={colors.textSecondary} />
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => moveItemDown(item)} style={styles.arrowBtn}>
+                            <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+                          </TouchableOpacity>
+                        </View>
+                      ) : editingItem?.id === item.id ? (
+                        <View style={styles.editRow}>
+                          <TextInput
+                            style={styles.editInput}
+                            value={editItemName}
+                            onChangeText={setEditItemName}
+                            onSubmitEditing={handleSaveEditItem}
+                            autoFocus
+                          />
+                          <TouchableOpacity onPress={handleSaveEditItem} style={styles.editBtn}>
+                            <Ionicons name="checkmark" size={20} color={colors.primary} />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => { setEditingItem(null); setEditItemName(''); }}
+                            style={styles.editBtn}
+                          >
+                            <Ionicons name="close" size={20} color={colors.textSecondary} />
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <TouchableOpacity
+                          style={styles.itemTouchable}
+                          onPress={() => cycleItem(item)}
+                          onLongPress={() => {
+                            setEditingItem(item);
+                            setEditItemName(item.name);
+                          }}
+                        >
+                          <View style={styles.checkbox}>
+                            {!item.needed ? (
+                              <Ionicons name="ellipse-outline" size={22} color="#CCC" />
+                            ) : item.taken ? (
+                              <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                            ) : (
+                              <Ionicons name="ellipse-outline" size={22} color={colors.primary} />
+                            )}
+                          </View>
+                          <Text
+                            style={[
+                              styles.itemName,
+                              !item.needed && styles.itemInactive,
+                              item.taken && styles.itemTaken,
+                            ]}
+                          >
+                            {item.name}
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => handleDeleteItem(item)}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          >
+                            <Ionicons name="close-circle-outline" size={18} color="#CCC" />
+                          </TouchableOpacity>
+                        </TouchableOpacity>
+                      )}
                     </View>
-                  ) : editingItem?.id === item.id ? (
-                    <View style={styles.editRow}>
+                  ))}
+
+                  {/* Add item input */}
+                  {addingItemCatId === cat.id ? (
+                    <View style={styles.addItemRow}>
                       <TextInput
-                        style={styles.editInput}
-                        value={editItemName}
-                        onChangeText={setEditItemName}
-                        onSubmitEditing={handleSaveEditItem}
+                        style={styles.addItemInput}
+                        placeholder="Item name"
+                        placeholderTextColor={colors.textSecondary}
+                        value={newItemName}
+                        onChangeText={setNewItemName}
+                        onSubmitEditing={() => handleAddItem(cat.id)}
                         autoFocus
                       />
-                      <TouchableOpacity onPress={handleSaveEditItem} style={styles.editBtn}>
+                      <TouchableOpacity onPress={() => handleAddItem(cat.id)} style={styles.addItemBtn}>
                         <Ionicons name="checkmark" size={20} color={colors.primary} />
                       </TouchableOpacity>
                       <TouchableOpacity
-                        onPress={() => { setEditingItem(null); setEditItemName(''); }}
-                        style={styles.editBtn}
+                        onPress={() => { setAddingItemCatId(null); setNewItemName(''); }}
+                        style={styles.addItemBtn}
                       >
                         <Ionicons name="close" size={20} color={colors.textSecondary} />
                       </TouchableOpacity>
                     </View>
                   ) : (
                     <TouchableOpacity
-                      style={styles.itemTouchable}
-                      onPress={() => cycleItem(item)}
-                      onLongPress={() => {
-                        setEditingItem(item);
-                        setEditItemName(item.name);
-                      }}
+                      style={styles.addItemTrigger}
+                      onPress={() => { setAddingItemCatId(cat.id); setNewItemName(''); }}
                     >
-                      <View style={styles.checkbox}>
-                        {!item.needed ? (
-                          <Ionicons name="ellipse-outline" size={22} color="#CCC" />
-                        ) : item.taken ? (
-                          <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
-                        ) : (
-                          <Ionicons name="ellipse-outline" size={22} color={colors.primary} />
-                        )}
-                      </View>
-                      <Text
-                        style={[
-                          styles.itemName,
-                          !item.needed && styles.itemInactive,
-                          item.taken && styles.itemTaken,
-                        ]}
-                      >
-                        {item.name}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => handleDeleteItem(item)}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      >
-                        <Ionicons name="close-circle-outline" size={18} color="#CCC" />
-                      </TouchableOpacity>
+                      <Ionicons name="add" size={18} color={colors.primary} />
+                      <Text style={styles.addItemText}>Add item</Text>
                     </TouchableOpacity>
                   )}
-                </View>
-              ))}
-
-              {/* Add item input */}
-              {addingItemCatId === cat.id ? (
-                <View style={styles.addItemRow}>
-                  <TextInput
-                    style={styles.addItemInput}
-                    placeholder="Item name"
-                    placeholderTextColor={colors.textSecondary}
-                    value={newItemName}
-                    onChangeText={setNewItemName}
-                    onSubmitEditing={() => handleAddItem(cat.id)}
-                    autoFocus
-                  />
-                  <TouchableOpacity onPress={() => handleAddItem(cat.id)} style={styles.addItemBtn}>
-                    <Ionicons name="checkmark" size={20} color={colors.primary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => { setAddingItemCatId(null); setNewItemName(''); }}
-                    style={styles.addItemBtn}
-                  >
-                    <Ionicons name="close" size={20} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.addItemTrigger}
-                  onPress={() => { setAddingItemCatId(cat.id); setNewItemName(''); }}
-                >
-                  <Ionicons name="add" size={18} color={colors.primary} />
-                  <Text style={styles.addItemText}>Add item</Text>
-                </TouchableOpacity>
+                </>
               )}
             </View>
           );
