@@ -199,12 +199,13 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
         </View>
 
         {ingredients.map((ing, i) => (
-          <IngredientRow
-            key={i}
-            ingredient={ing}
-            onChange={updated => updateIngredient(i, updated)}
-            onRemove={() => removeIngredient(i)}
-          />
+          <View key={i} style={{ zIndex: ingredients.length - i }}>
+            <IngredientRow
+              ingredient={ing}
+              onChange={updated => updateIngredient(i, updated)}
+              onRemove={() => removeIngredient(i)}
+            />
+          </View>
         ))}
         <TouchableOpacity style={styles.addIngBtn} onPress={addIngredient}>
           <Text style={styles.addIngText}>+ Add Ingredient</Text>

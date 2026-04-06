@@ -181,12 +181,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: colors.border,
-    zIndex: 1,
+    overflow: 'visible',
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
+    zIndex: 10,
   },
   bottomRow: {
     flexDirection: 'row',
