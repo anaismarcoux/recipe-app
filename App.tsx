@@ -23,10 +23,23 @@ export default function App() {
       if (!window.location.pathname.startsWith(base)) {
         window.history.replaceState(null, '', base + '/');
       }
-      // Prevent pull-to-refresh and elastic bounce on mobile browsers
+      // Lock viewport: no zoom, no bounce, no double-tap zoom
+      const viewport = document.querySelector('meta[name="viewport"]');
+      if (viewport) {
+        viewport.setAttribute('content',
+          'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'
+        );
+      }
       const style = document.createElement('style');
       style.textContent = `
-        html, body { margin: 0; overscroll-behavior: none; }
+        html, body {
+          margin: 0;
+          overflow: hidden;
+          overscroll-behavior: none;
+          touch-action: pan-x pan-y;
+          -webkit-text-size-adjust: 100%;
+        }
+        * { -webkit-tap-highlight-color: transparent; }
       `;
       document.head.appendChild(style);
     }
