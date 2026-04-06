@@ -1,17 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import {
-  StyleSheet, View, Text, TouchableOpacity,
+  StyleSheet, View, Text, ScrollView, TouchableOpacity,
   TextInput, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { FAB } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import DraggableFlatList, {
-  RenderItemParams,
-  ScaleDecorator,
-  NestableScrollContainer,
-  NestableDraggableFlatList,
-} from 'react-native-draggable-flatlist';
 import { colors } from '../constants/colors';
 import { useGroceryStore } from '../store/groceryStore';
 import { GroceryItem, GroceryCategory } from '../types';
@@ -21,16 +15,16 @@ export default function GroceryScreen({ navigation }: any) {
     categories, items, loading, load,
     addCategory, updateCategory, removeCategory,
     addItem, updateItem, removeItem, cycleItem, resetWeek,
-    reorderCategories, reorderItems,
+    moveCategoryUp, moveCategoryDown, moveItemUp, moveItemDown,
   } = useGroceryStore();
 
   const [addingItemCatId, setAddingItemCatId] = useState<string | null>(null);
   const [newItemName, setNewItemName] = useState('');
   const [addingCategory, setAddingCategory] = useState(false);
-  const [reorderCatMode, setReorderCatMode] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [editingItem, setEditingItem] = useState<GroceryItem | null>(null);
   const [editItemName, setEditItemName] = useState('');
+  const [reorderMode, setReorderMode] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -98,113 +92,7 @@ export default function GroceryScreen({ navigation }: any) {
   const neededCount = items.filter(i => i.needed && !i.taken).length;
   const takenCount = items.filter(i => i.taken).length;
 
-  const sortedCategories = [...categories].sort((a, b) => a.sortOrder - b.sortOrder);
-
   if (loading) return null;
-
-  // Category reorder mode: full-screen DraggableFlatList of category names
-  if (reorderCatMode) {
-    const renderCatReorder = ({ item, drag, isActive }: RenderItemParams<GroceryCategory>) => (
-      <ScaleDecorator>
-        <TouchableOpacity
-          style={[styles.reorderCatItem, isActive && styles.reorderCatItemActive]}
-          onLongPress={drag}
-          delayLongPress={150}
-        >
-          <Ionicons name="menu" size={20} color={colors.textSecondary} style={{ marginRight: 12 }} />
-          <Text style={styles.reorderCatText}>{item.name}</Text>
-        </TouchableOpacity>
-      </ScaleDecorator>
-    );
-
-    return (
-      <View style={styles.container}>
-        <View style={styles.summaryBar}>
-          <Text style={styles.summaryText}>Reorder Categories</Text>
-          <TouchableOpacity onPress={() => setReorderCatMode(false)} style={styles.weekBtn}>
-            <Ionicons name="checkmark" size={16} color="#fff" />
-            <Text style={styles.weekBtnText}>Done</Text>
-          </TouchableOpacity>
-        </View>
-        <DraggableFlatList
-          data={sortedCategories}
-          keyExtractor={(item) => item.id}
-          renderItem={renderCatReorder}
-          onDragEnd={({ data }) => reorderCategories(data)}
-          contentContainerStyle={{ padding: 12 }}
-          activationDistance={10}
-        />
-      </View>
-    );
-  }
-
-  const renderGroceryItem = (catId: string) => ({ item, drag, isActive }: RenderItemParams<GroceryItem>) => (
-    <ScaleDecorator>
-      <View style={[styles.itemRow, isActive && { backgroundColor: '#E8E8E8' }]}>
-        {editingItem?.id === item.id ? (
-          <View style={styles.editRow}>
-            <TextInput
-              style={styles.editInput}
-              value={editItemName}
-              onChangeText={setEditItemName}
-              onSubmitEditing={handleSaveEditItem}
-              autoFocus
-            />
-            <TouchableOpacity onPress={handleSaveEditItem} style={styles.editBtn}>
-              <Ionicons name="checkmark" size={20} color={colors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => { setEditingItem(null); setEditItemName(''); }}
-              style={styles.editBtn}
-            >
-              <Ionicons name="close" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.itemTouchable}
-            onPress={() => cycleItem(item)}
-            onLongPress={drag}
-            delayLongPress={200}
-          >
-            <View style={styles.checkbox}>
-              {!item.needed ? (
-                <Ionicons name="ellipse-outline" size={22} color="#CCC" />
-              ) : item.taken ? (
-                <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
-              ) : (
-                <Ionicons name="ellipse-outline" size={22} color={colors.primary} />
-              )}
-            </View>
-            <Text
-              style={[
-                styles.itemName,
-                !item.needed && styles.itemInactive,
-                item.taken && styles.itemTaken,
-              ]}
-            >
-              {item.name}
-            </Text>
-            <TouchableOpacity
-              onPress={() => {
-                setEditingItem(item);
-                setEditItemName(item.name);
-              }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="pencil-outline" size={16} color="#CCC" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => handleDeleteItem(item)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="close-circle-outline" size={18} color="#CCC" />
-            </TouchableOpacity>
-          </TouchableOpacity>
-        )}
-      </View>
-    </ScaleDecorator>
-  );
 
   return (
     <KeyboardAvoidingView
@@ -220,27 +108,36 @@ export default function GroceryScreen({ navigation }: any) {
           <Ionicons name="list" size={16} color="#fff" />
           <Text style={styles.weekBtnText}>This Week</Text>
         </TouchableOpacity>
-        {(neededCount > 0 || takenCount > 0) ? (
-          <Text style={styles.summaryText}>
-            {neededCount > 0 ? `${neededCount} to buy` : ''}
-            {neededCount > 0 && takenCount > 0 ? '  ·  ' : ''}
-            {takenCount > 0 ? `${takenCount} done` : ''}
-          </Text>
-        ) : (
-          <Text style={styles.summaryText}>Tap items you need this week</Text>
-        )}
-        <TouchableOpacity onPress={() => setReorderCatMode(true)} style={styles.reorderBtn}>
-          <Ionicons name="swap-vertical" size={18} color={colors.primary} />
-        </TouchableOpacity>
-        {(neededCount > 0 || takenCount > 0) && (
-          <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
-            <Ionicons name="refresh" size={16} color={colors.primary} />
-            <Text style={styles.resetText}>Reset</Text>
+        {reorderMode ? (
+          <TouchableOpacity onPress={() => setReorderMode(false)} style={styles.weekBtn}>
+            <Ionicons name="checkmark" size={16} color="#fff" />
+            <Text style={styles.weekBtnText}>Done</Text>
           </TouchableOpacity>
+        ) : (
+          <>
+            {(neededCount > 0 || takenCount > 0) ? (
+              <Text style={styles.summaryText}>
+                {neededCount > 0 ? `${neededCount} to buy` : ''}
+                {neededCount > 0 && takenCount > 0 ? '  ·  ' : ''}
+                {takenCount > 0 ? `${takenCount} done` : ''}
+              </Text>
+            ) : (
+              <Text style={styles.summaryText}>Tap items you need this week</Text>
+            )}
+            <TouchableOpacity onPress={() => setReorderMode(true)} style={styles.reorderBtn}>
+              <Ionicons name="swap-vertical" size={18} color={colors.primary} />
+            </TouchableOpacity>
+            {(neededCount > 0 || takenCount > 0) && (
+              <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
+                <Ionicons name="refresh" size={16} color={colors.primary} />
+                <Text style={styles.resetText}>Reset</Text>
+              </TouchableOpacity>
+            )}
+          </>
         )}
       </View>
 
-      <NestableScrollContainer contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll}>
         {categories.length === 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No grocery categories yet</Text>
@@ -248,31 +145,111 @@ export default function GroceryScreen({ navigation }: any) {
           </View>
         )}
 
-        {sortedCategories.map(cat => {
+        {[...categories].sort((a, b) => a.sortOrder - b.sortOrder).map(cat => {
           const catItems = items
             .filter(i => i.categoryId === cat.id)
-            .sort((a, b) => a.sortOrder - b.sortOrder);
+            .sort((a, b) => {
+              if (reorderMode) return a.sortOrder - b.sortOrder;
+              if (a.needed && !a.taken && !(b.needed && !b.taken)) return -1;
+              if (b.needed && !b.taken && !(a.needed && !a.taken)) return 1;
+              if (!a.needed && !a.taken && (b.needed || b.taken)) return 1;
+              if (!b.needed && !b.taken && (a.needed || a.taken)) return -1;
+              return a.sortOrder - b.sortOrder;
+            });
 
           return (
             <View key={cat.id} style={styles.section}>
-              <TouchableOpacity
-                style={styles.catHeader}
-                onLongPress={() => handleEditCategory(cat)}
-                onPress={() => handleDeleteCategory(cat)}
-              >
-                <Text style={styles.catTitle}>{cat.name}</Text>
-                <Text style={styles.catCount}>
-                  {catItems.filter(i => i.needed && !i.taken).length}/{catItems.length}
-                </Text>
-              </TouchableOpacity>
+              {reorderMode ? (
+                <View style={styles.catHeaderReorder}>
+                  <Text style={[styles.catTitle, { flex: 1 }]}>{cat.name}</Text>
+                  <TouchableOpacity onPress={() => moveCategoryUp(cat.id)} style={styles.arrowBtn}>
+                    <Ionicons name="chevron-up" size={20} color={colors.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => moveCategoryDown(cat.id)} style={styles.arrowBtn}>
+                    <Ionicons name="chevron-down" size={20} color={colors.primary} />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.catHeader}
+                  onLongPress={() => handleEditCategory(cat)}
+                  onPress={() => handleDeleteCategory(cat)}
+                >
+                  <Text style={styles.catTitle}>{cat.name}</Text>
+                  <Text style={styles.catCount}>
+                    {catItems.filter(i => i.needed && !i.taken).length}/{catItems.length}
+                  </Text>
+                </TouchableOpacity>
+              )}
 
-              <NestableDraggableFlatList
-                data={catItems}
-                keyExtractor={(item) => item.id}
-                renderItem={renderGroceryItem(cat.id)}
-                onDragEnd={({ data }) => reorderItems(cat.id, data)}
-                activationDistance={10}
-              />
+              {catItems.map(item => (
+                <View key={item.id} style={styles.itemRow}>
+                  {reorderMode ? (
+                    <View style={styles.itemReorderRow}>
+                      <Text style={[styles.itemName, { flex: 1 }]}>{item.name}</Text>
+                      <TouchableOpacity onPress={() => moveItemUp(item)} style={styles.arrowBtn}>
+                        <Ionicons name="chevron-up" size={18} color={colors.textSecondary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => moveItemDown(item)} style={styles.arrowBtn}>
+                        <Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+                      </TouchableOpacity>
+                    </View>
+                  ) : editingItem?.id === item.id ? (
+                    <View style={styles.editRow}>
+                      <TextInput
+                        style={styles.editInput}
+                        value={editItemName}
+                        onChangeText={setEditItemName}
+                        onSubmitEditing={handleSaveEditItem}
+                        autoFocus
+                      />
+                      <TouchableOpacity onPress={handleSaveEditItem} style={styles.editBtn}>
+                        <Ionicons name="checkmark" size={20} color={colors.primary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => { setEditingItem(null); setEditItemName(''); }}
+                        style={styles.editBtn}
+                      >
+                        <Ionicons name="close" size={20} color={colors.textSecondary} />
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.itemTouchable}
+                      onPress={() => cycleItem(item)}
+                      onLongPress={() => {
+                        setEditingItem(item);
+                        setEditItemName(item.name);
+                      }}
+                    >
+                      <View style={styles.checkbox}>
+                        {!item.needed ? (
+                          <Ionicons name="ellipse-outline" size={22} color="#CCC" />
+                        ) : item.taken ? (
+                          <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                        ) : (
+                          <Ionicons name="ellipse-outline" size={22} color={colors.primary} />
+                        )}
+                      </View>
+                      <Text
+                        style={[
+                          styles.itemName,
+                          !item.needed && styles.itemInactive,
+                          item.taken && styles.itemTaken,
+                        ]}
+                      >
+                        {item.name}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => handleDeleteItem(item)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <Ionicons name="close-circle-outline" size={18} color="#CCC" />
+                      </TouchableOpacity>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
 
               {/* Add item input */}
               {addingItemCatId === cat.id ? (
@@ -332,7 +309,7 @@ export default function GroceryScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
         ) : null}
-      </NestableScrollContainer>
+      </ScrollView>
 
       <FAB
         icon="plus"
@@ -363,8 +340,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.text,
-    flex: 1,
-    textAlign: 'center',
   },
   weekBtn: {
     flexDirection: 'row',
@@ -435,8 +410,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
   },
+  catHeaderReorder: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  arrowBtn: {
+    padding: 6,
+  },
   itemRow: {
     paddingHorizontal: 14,
+  },
+  itemReorderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
   },
   itemTouchable: {
     flexDirection: 'row',
@@ -534,30 +523,5 @@ const styles = StyleSheet.create({
     bottom: 20,
     backgroundColor: colors.primary,
     borderRadius: 28,
-  },
-  // Category reorder mode styles
-  reorderCatItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    marginHorizontal: 0,
-    marginBottom: 8,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  reorderCatItemActive: {
-    backgroundColor: '#E0E0E0',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  reorderCatText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-    flex: 1,
   },
 });

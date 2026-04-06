@@ -3,7 +3,6 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { PaperProvider } from 'react-native-paper';
 import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts, Pacifico_400Regular } from '@expo-google-fonts/pacifico';
 import RootNavigator from './src/navigation/RootNavigator';
 import { colors } from './src/constants/colors';
@@ -18,17 +17,10 @@ export default function App() {
       if (!window.location.pathname.startsWith(base)) {
         window.history.replaceState(null, '', base + '/');
       }
-      // Prevent website-like scrolling behavior on web
+      // Prevent pull-to-refresh and elastic bounce on mobile browsers
       const style = document.createElement('style');
       style.textContent = `
-        html, body, #root {
-          height: 100%;
-          overflow: hidden;
-          overscroll-behavior: none;
-          -webkit-overflow-scrolling: touch;
-          position: fixed;
-          width: 100%;
-        }
+        html, body { margin: 0; overscroll-behavior: none; }
       `;
       document.head.appendChild(style);
     }
@@ -43,14 +35,14 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <PaperProvider>
         <NavigationContainer>
           <RootNavigator />
           <StatusBar style="auto" />
         </NavigationContainer>
       </PaperProvider>
-    </GestureHandlerRootView>
+    </View>
   );
 }
 
