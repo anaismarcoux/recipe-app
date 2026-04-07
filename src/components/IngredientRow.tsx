@@ -201,21 +201,20 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
                     </Text>
                   </TouchableOpacity>
                 ))}
-                <TouchableOpacity
-                  style={styles.addCustomBtn}
-                  onPress={openAddModal}
-                >
-                  <Ionicons name="add-circle-outline" size={16} color={colors.primary} />
-                  <Text style={styles.addCustomText}>
-                    Add "{ingredient.name}" as custom food
-                  </Text>
-                </TouchableOpacity>
               </ScrollView>
             </View>
           )}
         </View>
         {selectedFood && (
           <Text style={styles.calBadge}>{selectedFood.calPer100g}/100g</Text>
+        )}
+        {!selectedFood && ingredient.name.length >= 2 && (
+          <TouchableOpacity
+            style={styles.addCustomBtn}
+            onPress={openAddModal}
+          >
+            <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+          </TouchableOpacity>
         )}
         <TouchableOpacity onPress={onRemove} style={styles.removeBtn}>
           <Text style={styles.removeText}>X</Text>
@@ -474,17 +473,13 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   addCustomBtn: {
-    flexDirection: 'row',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 6,
-  },
-  addCustomText: {
-    fontSize: 13,
-    color: colors.primary,
-    fontWeight: '500',
-    flex: 1,
+    justifyContent: 'center',
+    marginRight: 6,
   },
   // Modal styles
   modalOverlay: {
