@@ -146,9 +146,13 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
     if (!customName.trim()) { setCustomError('Enter a name'); return; }
     if (!cal || cal <= 0) { setCustomError('Enter calories per 100g'); return; }
     const gpc = parseFloat(customGramsCup) || null;
-    const food = await addCustom(customName.trim(), cal, gpc);
-    setShowAddModal(false);
-    handleSelectFood(food);
+    try {
+      const food = await addCustom(customName.trim(), cal, gpc);
+      setShowAddModal(false);
+      handleSelectFood(food);
+    } catch (e: any) {
+      setCustomError(e?.message || 'Failed to save custom food');
+    }
   };
 
   // Show grams field when unit is NOT already grams
