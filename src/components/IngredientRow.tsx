@@ -227,7 +227,7 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
           style={[styles.input, styles.smallInput]}
           placeholder="Amt"
           placeholderTextColor={colors.textSecondary}
-          keyboardType="numeric"
+          keyboardType="decimal-pad"
           value={ingredient.amount}
           onChangeText={handleAmountChange}
         />
@@ -254,7 +254,7 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
               style={[styles.input, styles.gramsInput]}
               placeholder="grams"
               placeholderTextColor={colors.textSecondary}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               value={ingredient.grams}
               onChangeText={handleGramsChange}
             />
@@ -266,7 +266,7 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
           style={[styles.input, styles.kcalInput]}
           placeholder="kcal"
           placeholderTextColor={colors.textSecondary}
-          keyboardType="numeric"
+          keyboardType="decimal-pad"
           value={ingredient.calories}
           onChangeText={calories => onChange({ ...ingredient, calories })}
         />
@@ -295,7 +295,7 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
               onChangeText={setCustomCal}
               placeholder="e.g. 250"
               placeholderTextColor={colors.textSecondary}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
             />
 
             <Text style={styles.modalLabel}>Grams per cup (optional)</Text>
@@ -305,7 +305,7 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
               onChangeText={setCustomGramsCup}
               placeholder="e.g. 150"
               placeholderTextColor={colors.textSecondary}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
             />
 
             {customError ? <Text style={styles.modalError}>{customError}</Text> : null}
