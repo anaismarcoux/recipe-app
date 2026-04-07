@@ -5,6 +5,7 @@ import { colors } from '../constants/colors';
 import { useRecipeStore } from '../store/recipeStore';
 import { RecipeWithIngredients } from '../types';
 import CalorieSummary from '../components/CalorieSummary';
+import { toFraction } from '../utils/calorieCalculator';
 
 export default function RecipeDetailScreen({ route, navigation }: any) {
   const { recipeId } = route.params;
@@ -97,7 +98,7 @@ export default function RecipeDetailScreen({ route, navigation }: any) {
           <>
             <Text style={styles.sectionTitle}>Ingredients</Text>
             {recipe.ingredients.map((ing, i) => {
-              const amountPart = ing.amount > 0 ? `${ing.amount} ${ing.unit}` : '';
+              const amountPart = ing.amount > 0 ? `${toFraction(ing.amount)} ${ing.unit}` : '';
               const gramsPart = ing.grams && ing.unit !== 'g' ? `(${ing.grams}g)` : '';
               const label = [amountPart, ing.name, gramsPart].filter(Boolean).join(' ');
               return (
