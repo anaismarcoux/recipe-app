@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { StyleSheet, View, Text, ScrollView, Image, Alert, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, Image, Alert, TouchableOpacity, Platform } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import { useRecipeStore } from '../store/recipeStore';
@@ -38,19 +38,26 @@ export default function RecipeDetailScreen({ route, navigation }: any) {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!recipe) return;
-    Alert.alert('Delete Recipe', `Delete "${recipe.title}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await remove(recipe.id);
-          navigation.goBack();
+    if (Platform.OS === 'web') {
+      if (confirm(`Delete "${recipe.title}"?`)) {
+        await remove(recipe.id);
+        navigation.goBack();
+      }
+    } else {
+      Alert.alert('Delete Recipe', `Delete "${recipe.title}"?`, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await remove(recipe.id);
+            navigation.goBack();
+          },
         },
-      },
-    ]);
+      ]);
+    }
   };
 
   if (!recipe) {
@@ -89,14 +96,17 @@ export default function RecipeDetailScreen({ route, navigation }: any) {
         {recipe.ingredients.length > 0 && (
           <>
             <Text style={styles.sectionTitle}>Ingredients</Text>
-            {recipe.ingredients.map((ing, i) => (
-              <View key={ing.id} style={styles.ingredientRow}>
-                <Text style={styles.ingredientText}>
-                  {ing.amount} {ing.unit} {ing.name}
-                </Text>
-                <Text style={styles.ingredientCal}>{ing.calories} kcal</Text>
-              </View>
-            ))}
+            {recipe.ingredients.map((ing, i) => {
+              const amountPart = ing.amount > 0 ? `${ing.amount} ${ing.unit}` : '';
+              const gramsPart = ing.grams && ing.unit !== 'g' ? `(${ing.grams}g)` : '';
+              const label = [amountPart, ing.name, gramsPart].filter(Boolean).join(' ');
+              return (
+                <View key={ing.id} style={styles.ingredientRow}>
+                  <Text style={styles.ingredientText}>{label}</Text>
+                  <Text style={styles.ingredientCal}>{ing.calories} kcal</Text>
+                </View>
+              );
+            })}
           </>
         )}
 

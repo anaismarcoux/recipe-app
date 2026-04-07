@@ -29,6 +29,7 @@ export interface Ingredient {
   name: string;
   amount: number;
   unit: string;
+  grams: number | null;
   calories: number;
   sortOrder: number;
 }

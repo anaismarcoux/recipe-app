@@ -8,6 +8,7 @@ function toIngredient(row: any): Ingredient {
     name: row.name,
     amount: row.amount,
     unit: row.unit,
+    grams: row.grams ?? null,
     calories: row.calories,
     sortOrder: row.sort_order,
   };
@@ -43,6 +44,7 @@ export async function replaceIngredients(
     name: ing.name,
     amount: ing.amount,
     unit: ing.unit,
+    grams: ing.grams,
     calories: ing.calories,
     sort_order: ing.sortOrder,
   }));

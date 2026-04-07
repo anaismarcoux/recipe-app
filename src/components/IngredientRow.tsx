@@ -12,6 +12,7 @@ interface IngredientInput {
   name: string;
   amount: string;
   unit: string;
+  grams: string;
   calories: string;
 }
 
@@ -22,6 +23,10 @@ interface Props {
 }
 
 const UNITS = ['g', 'ml', 'cups', 'tbsp', 'tsp', 'pcs', 'oz', 'lb'];
+
+function calcCalFromGrams(food: FoodEntry, grams: number): number {
+  return Math.round((grams / 100) * food.calPer100g);
+}
 
 export default function IngredientRow({ ingredient, onChange, onRemove }: Props) {
   const [suggestions, setSuggestions] = useState<FoodEntry[]>([]);
@@ -55,15 +60,13 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
     setShowSuggestions(combined.length > 0 && ingredient.name.length >= 2);
   }, [ingredient.name]);
 
-  useEffect(() => {
-    if (!selectedFood) return;
-    const amount = parseFloat(ingredient.amount);
-    if (!amount || amount <= 0) return;
-    const cal = calculateCalories(selectedFood, amount, ingredient.unit);
-    if (cal !== null) {
-      onChange({ ...ingredient, calories: String(cal) });
-    }
-  }, [ingredient.amount, ingredient.unit, selectedFood]);
+  // Recalculate calories when grams changes (grams is the source of truth for calories)
+  const recalcFromGrams = (food: FoodEntry | null, grams: string): string | null => {
+    if (!food) return null;
+    const g = parseFloat(grams);
+    if (!g || g <= 0) return null;
+    return String(calcCalFromGrams(food, g));
+  };
 
   const handleSelectFood = (food: FoodEntry) => {
     ignoreNextSearch.current = true;
@@ -71,18 +74,27 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
     setShowSuggestions(false);
     setSuggestions([]);
 
-    const amount = parseFloat(ingredient.amount);
-    const cal = amount > 0 ? calculateCalories(food, amount, ingredient.unit) : null;
-    onChange({
-      ...ingredient,
-      name: food.name,
-      calories: cal !== null ? String(cal) : ingredient.calories,
-    });
+    const update: IngredientInput = { ...ingredient, name: food.name };
+
+    // If grams is filled, calculate calories from grams
+    const g = parseFloat(ingredient.grams);
+    if (g > 0) {
+      update.calories = String(calcCalFromGrams(food, g));
+    } else {
+      // Try calculating from amount+unit
+      const amt = parseFloat(ingredient.amount);
+      if (amt > 0) {
+        const cal = calculateCalories(food, amt, ingredient.unit);
+        if (cal !== null) update.calories = String(cal);
+      }
+    }
+    onChange(update);
   };
 
   const handleAmountChange = (amount: string) => {
     const update: IngredientInput = { ...ingredient, amount };
-    if (selectedFood) {
+    // Only recalc from amount if no grams specified
+    if (selectedFood && !parseFloat(ingredient.grams)) {
       const amt = parseFloat(amount);
       if (amt > 0) {
         const cal = calculateCalories(selectedFood, amt, ingredient.unit);
@@ -94,12 +106,28 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
 
   const handleUnitChange = (unit: string) => {
     const update: IngredientInput = { ...ingredient, unit };
-    if (selectedFood) {
+    // If switching to 'g', sync grams field with amount
+    if (unit === 'g' && parseFloat(ingredient.amount) > 0) {
+      update.grams = ingredient.amount;
+      if (selectedFood) {
+        const cal = recalcFromGrams(selectedFood, ingredient.amount);
+        if (cal) update.calories = cal;
+      }
+    } else if (selectedFood && !parseFloat(ingredient.grams)) {
       const amt = parseFloat(ingredient.amount);
       if (amt > 0) {
         const cal = calculateCalories(selectedFood, amt, unit);
         if (cal !== null) update.calories = String(cal);
       }
+    }
+    onChange(update);
+  };
+
+  const handleGramsChange = (grams: string) => {
+    const update: IngredientInput = { ...ingredient, grams };
+    if (selectedFood) {
+      const cal = recalcFromGrams(selectedFood, grams);
+      if (cal) update.calories = cal;
     }
     onChange(update);
   };
@@ -122,6 +150,9 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
     setShowAddModal(false);
     handleSelectFood(food);
   };
+
+  // Show grams field when unit is NOT already grams
+  const showGramsField = ingredient.unit !== 'g';
 
   return (
     <View style={styles.container}>
@@ -166,7 +197,6 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
                     </Text>
                   </TouchableOpacity>
                 ))}
-                {/* Add custom food button */}
                 <TouchableOpacity
                   style={styles.addCustomBtn}
                   onPress={openAddModal}
@@ -187,6 +217,8 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
           <Text style={styles.removeText}>X</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Amount + unit row */}
       <View style={styles.bottomRow}>
         <TextInput
           style={[styles.input, styles.smallInput]}
@@ -209,8 +241,26 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
             </TouchableOpacity>
           ))}
         </View>
+      </View>
+
+      {/* Grams + kcal row */}
+      <View style={styles.gramsRow}>
+        {showGramsField && (
+          <View style={styles.gramsInputWrap}>
+            <TextInput
+              style={[styles.input, styles.gramsInput]}
+              placeholder="grams"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="numeric"
+              value={ingredient.grams}
+              onChangeText={handleGramsChange}
+            />
+            <Text style={styles.gramsLabel}>g</Text>
+          </View>
+        )}
+        <View style={{ flex: 1 }} />
         <TextInput
-          style={[styles.input, styles.smallInput]}
+          style={[styles.input, styles.kcalInput]}
           placeholder="kcal"
           placeholderTextColor={colors.textSecondary}
           keyboardType="numeric"
@@ -299,6 +349,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 6,
+    marginBottom: 6,
+  },
+  gramsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   input: {
     borderWidth: 1,
@@ -314,6 +370,23 @@ const styles = StyleSheet.create({
   },
   smallInput: {
     width: 60,
+  },
+  gramsInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  gramsInput: {
+    width: 60,
+  },
+  gramsLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  kcalInput: {
+    width: 60,
+    textAlign: 'right',
   },
   removeBtn: {
     width: 30,

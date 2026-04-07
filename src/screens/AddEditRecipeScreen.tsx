@@ -14,11 +14,12 @@ interface IngredientInput {
   name: string;
   amount: string;
   unit: string;
+  grams: string;
   calories: string;
 }
 
 const emptyIngredient = (): IngredientInput => ({
-  name: '', amount: '', unit: 'g', calories: '',
+  name: '', amount: '', unit: 'g', grams: '', calories: '',
 });
 
 export default function AddEditRecipeScreen({ route, navigation }: any) {
@@ -57,6 +58,7 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
             name: ing.name,
             amount: ing.amount.toString(),
             unit: ing.unit,
+            grams: ing.grams ? ing.grams.toString() : '',
             calories: ing.calories.toString(),
           })));
         }
@@ -129,6 +131,7 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
           name: ing.name.trim(),
           amount: parseFloat(ing.amount) || 0,
           unit: ing.unit,
+          grams: parseFloat(ing.grams) || null,
           calories: parseFloat(ing.calories) || 0,
           sortOrder: 0,
         }));
