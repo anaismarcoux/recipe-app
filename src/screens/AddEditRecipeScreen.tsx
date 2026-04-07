@@ -145,8 +145,13 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
         await add(recipeData, ingredientData);
       }
       navigation.goBack();
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save recipe');
+    } catch (e: any) {
+      const msg = e?.message || 'Failed to save recipe';
+      if (Platform.OS === 'web') {
+        alert(msg);
+      } else {
+        Alert.alert('Error', msg);
+      }
     } finally {
       setSaving(false);
     }
