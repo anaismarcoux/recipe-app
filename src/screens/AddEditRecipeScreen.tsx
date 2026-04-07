@@ -16,10 +16,15 @@ interface IngredientInput {
   unit: string;
   grams: string;
   calories: string;
+  prep: string;
 }
 
+type EditorItem =
+  | { type: 'ingredient'; data: IngredientInput }
+  | { type: 'section'; name: string };
+
 const emptyIngredient = (): IngredientInput => ({
-  name: '', amount: '', unit: 'g', grams: '', calories: '',
+  name: '', amount: '', unit: 'g', grams: '', calories: '', prep: '',
 });
 
 export default function AddEditRecipeScreen({ route, navigation }: any) {
@@ -31,7 +36,7 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
   const [selectedCategoryId, setSelectedCategoryId] = useState(categoryId || '');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [about, setAbout] = useState('');
-  const [ingredients, setIngredients] = useState<IngredientInput[]>([emptyIngredient()]);
+  const [items, setItems] = useState<EditorItem[]>([{ type: 'ingredient', data: emptyIngredient() }]);
   const [steps, setSteps] = useState('');
   const [yieldAmount, setYieldAmount] = useState('');
   const [yieldUnit, setYieldUnit] = useState('');
@@ -54,13 +59,26 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
         setTotalWeight(r.totalWeightGrams?.toString() || '');
         setNotes(r.notes || '');
         if (r.ingredients.length > 0) {
-          setIngredients(r.ingredients.map(ing => ({
-            name: ing.name,
-            amount: ing.amount.toString(),
-            unit: ing.unit,
-            grams: ing.grams ? ing.grams.toString() : '',
-            calories: ing.calories.toString(),
-          })));
+          const loaded: EditorItem[] = [];
+          let lastGroup: string | null = null;
+          for (const ing of r.ingredients) {
+            if (ing.groupName && ing.groupName !== lastGroup) {
+              loaded.push({ type: 'section', name: ing.groupName });
+              lastGroup = ing.groupName;
+            }
+            loaded.push({
+              type: 'ingredient',
+              data: {
+                name: ing.name,
+                amount: ing.amount.toString(),
+                unit: ing.unit,
+                grams: ing.grams ? ing.grams.toString() : '',
+                calories: ing.calories.toString(),
+                prep: ing.prep || '',
+              },
+            });
+          }
+          setItems(loaded);
         }
       });
     } else {
@@ -78,26 +96,31 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
     }
   };
 
-  const updateIngredient = (index: number, updated: IngredientInput) => {
-    const copy = [...ingredients];
+  const updateItem = (index: number, updated: EditorItem) => {
+    const copy = [...items];
     copy[index] = updated;
-    setIngredients(copy);
+    setItems(copy);
   };
 
-  const removeIngredient = (index: number) => {
-    if (ingredients.length === 1) {
-      setIngredients([emptyIngredient()]);
+  const removeItem = (index: number) => {
+    const remaining = items.filter((_, i) => i !== index);
+    if (remaining.length === 0) {
+      setItems([{ type: 'ingredient', data: emptyIngredient() }]);
     } else {
-      setIngredients(ingredients.filter((_, i) => i !== index));
+      setItems(remaining);
     }
   };
 
   const addIngredient = () => {
-    setIngredients([...ingredients, emptyIngredient()]);
+    setItems([...items, { type: 'ingredient', data: emptyIngredient() }]);
   };
 
-  const runningTotal = ingredients.reduce(
-    (sum, ing) => sum + (parseFloat(ing.calories) || 0), 0
+  const addSection = () => {
+    setItems([...items, { type: 'section', name: '' }]);
+  };
+
+  const runningTotal = items.reduce(
+    (sum, item) => sum + (item.type === 'ingredient' ? (parseFloat(item.data.calories) || 0) : 0), 0
   );
 
   const handleSave = async () => {
@@ -125,16 +148,24 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
         totalWeightGrams: totalWeight ? parseFloat(totalWeight) : null,
       };
 
-      const ingredientData = ingredients
-        .filter(ing => ing.name.trim())
-        .map(ing => ({
-          name: ing.name.trim(),
-          amount: parseFloat(ing.amount) || 0,
-          unit: ing.unit,
-          grams: parseFloat(ing.grams) || null,
-          calories: parseFloat(ing.calories) || 0,
-          sortOrder: 0,
-        }));
+      let currentGroup: string | null = null;
+      const ingredientData: any[] = [];
+      for (const item of items) {
+        if (item.type === 'section') {
+          currentGroup = item.name.trim() || null;
+        } else if (item.data.name.trim()) {
+          ingredientData.push({
+            name: item.data.name.trim(),
+            amount: parseFloat(item.data.amount) || 0,
+            unit: item.data.unit,
+            grams: parseFloat(item.data.grams) || null,
+            calories: parseFloat(item.data.calories) || 0,
+            prep: item.data.prep.trim() || null,
+            groupName: currentGroup,
+            sortOrder: 0,
+          });
+        }
+      }
 
       if (recipeId) {
         const existing = await getWithIngredients(recipeId);
@@ -206,18 +237,38 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
           <Text style={styles.runningTotal}>{Math.round(runningTotal)} kcal total</Text>
         </View>
 
-        {ingredients.map((ing, i) => (
-          <View key={i} style={{ zIndex: ingredients.length - i }}>
-            <IngredientRow
-              ingredient={ing}
-              onChange={updated => updateIngredient(i, updated)}
-              onRemove={() => removeIngredient(i)}
-            />
+        {items.map((item, i) => (
+          <View key={i} style={{ zIndex: items.length - i }}>
+            {item.type === 'section' ? (
+              <View style={styles.sectionRow}>
+                <TextInput
+                  style={[styles.input, styles.sectionInput]}
+                  placeholder="Section name (e.g. Sauce, Dry ingredients)"
+                  placeholderTextColor={colors.textSecondary}
+                  value={item.name}
+                  onChangeText={name => updateItem(i, { type: 'section', name })}
+                />
+                <TouchableOpacity onPress={() => removeItem(i)} style={styles.sectionRemoveBtn}>
+                  <Text style={styles.sectionRemoveText}>X</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <IngredientRow
+                ingredient={item.data}
+                onChange={updated => updateItem(i, { type: 'ingredient', data: updated })}
+                onRemove={() => removeItem(i)}
+              />
+            )}
           </View>
         ))}
-        <TouchableOpacity style={styles.addIngBtn} onPress={addIngredient}>
-          <Text style={styles.addIngText}>+ Add Ingredient</Text>
-        </TouchableOpacity>
+        <View style={styles.addBtnRow}>
+          <TouchableOpacity style={[styles.addIngBtn, { flex: 1 }]} onPress={addIngredient}>
+            <Text style={styles.addIngText}>+ Ingredient</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.addIngBtn, styles.addSectionBtn, { flex: 1 }]} onPress={addSection}>
+            <Text style={[styles.addIngText, { color: colors.textSecondary }]}>+ Section</Text>
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.label}>Steps (one per line)</Text>
         <TextInput
@@ -377,6 +428,37 @@ const styles = StyleSheet.create({
     color: colors.calorieOrange,
     marginTop: 12,
   },
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  sectionInput: {
+    flex: 1,
+    fontWeight: '700',
+    fontSize: 15,
+    backgroundColor: colors.primaryLight,
+    borderColor: colors.primary,
+  },
+  sectionRemoveBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionRemoveText: {
+    color: colors.textSecondary,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  addBtnRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
   addIngBtn: {
     padding: 12,
     alignItems: 'center',
@@ -384,7 +466,9 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     borderRadius: 10,
     borderStyle: 'dashed',
-    marginBottom: 8,
+  },
+  addSectionBtn: {
+    borderColor: colors.textSecondary,
   },
   addIngText: {
     color: colors.primary,

@@ -31,6 +31,8 @@ export interface Ingredient {
   unit: string;
   grams: number | null;
   calories: number;
+  prep: string | null;
+  groupName: string | null;
   sortOrder: number;
 }
 

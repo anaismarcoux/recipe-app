@@ -10,6 +10,8 @@ function toIngredient(row: any): Ingredient {
     unit: row.unit,
     grams: row.grams ?? null,
     calories: row.calories,
+    prep: row.prep ?? null,
+    groupName: row.group_name ?? null,
     sortOrder: row.sort_order,
   };
 }
@@ -46,6 +48,8 @@ export async function replaceIngredients(
     unit: ing.unit,
     grams: ing.grams,
     calories: ing.calories,
+    prep: ing.prep,
+    group_name: ing.groupName,
     sort_order: ing.sortOrder,
   }));
   const { error: insertError } = await supabase.from('ingredients').insert(rows);

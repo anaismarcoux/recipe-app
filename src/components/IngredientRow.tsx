@@ -14,6 +14,7 @@ interface IngredientInput {
   unit: string;
   grams: string;
   calories: string;
+  prep: string;
 }
 
 interface Props {
@@ -221,6 +222,15 @@ export default function IngredientRow({ ingredient, onChange, onRemove }: Props)
         </TouchableOpacity>
       </View>
 
+      {/* Prep / description */}
+      <TextInput
+        style={[styles.input, styles.prepInput]}
+        placeholder="e.g. medium, chopped, finely diced"
+        placeholderTextColor={colors.textSecondary}
+        value={ingredient.prep}
+        onChangeText={prep => onChange({ ...ingredient, prep })}
+      />
+
       {/* Amount + unit row */}
       <View style={styles.bottomRow}>
         <TextInput
@@ -370,6 +380,12 @@ const styles = StyleSheet.create({
   },
   nameInput: {
     flex: 1,
+  },
+  prepInput: {
+    marginBottom: 6,
+    fontSize: 13,
+    paddingVertical: 5,
+    fontStyle: 'italic',
   },
   smallInput: {
     width: 60,

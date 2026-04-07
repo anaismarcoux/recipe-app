@@ -94,22 +94,33 @@ export default function RecipeDetailScreen({ route, navigation }: any) {
           </Text>
         )}
 
-        {recipe.ingredients.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>Ingredients</Text>
-            {recipe.ingredients.map((ing, i) => {
-              const amountPart = ing.amount > 0 ? `${toFraction(ing.amount)} ${ing.unit}` : '';
-              const gramsPart = ing.grams && ing.unit !== 'g' ? `(${ing.grams}g)` : '';
-              const label = [amountPart, ing.name, gramsPart].filter(Boolean).join(' ');
-              return (
-                <View key={ing.id} style={styles.ingredientRow}>
-                  <Text style={styles.ingredientText}>{label}</Text>
-                  <Text style={styles.ingredientCal}>{ing.calories} kcal</Text>
-                </View>
-              );
-            })}
-          </>
-        )}
+        {recipe.ingredients.length > 0 && (() => {
+          let lastGroup: string | null = null;
+          return (
+            <>
+              <Text style={styles.sectionTitle}>Ingredients</Text>
+              {recipe.ingredients.map((ing, i) => {
+                const showGroup = ing.groupName && ing.groupName !== lastGroup;
+                lastGroup = ing.groupName;
+                const amountPart = ing.amount > 0 ? `${toFraction(ing.amount)} ${ing.unit}` : '';
+                const prepPart = ing.prep ? `, ${ing.prep}` : '';
+                const gramsPart = ing.grams && ing.unit !== 'g' ? `(${ing.grams}g)` : '';
+                const label = [amountPart, ing.name].filter(Boolean).join(' ') + prepPart + (gramsPart ? ` ${gramsPart}` : '');
+                return (
+                  <React.Fragment key={ing.id}>
+                    {showGroup && (
+                      <Text style={styles.groupHeader}>{ing.groupName}</Text>
+                    )}
+                    <View style={styles.ingredientRow}>
+                      <Text style={styles.ingredientText}>{label}</Text>
+                      <Text style={styles.ingredientCal}>{ing.calories} kcal</Text>
+                    </View>
+                  </React.Fragment>
+                );
+              })}
+            </>
+          );
+        })()}
 
         {steps.length > 0 && (
           <>
@@ -194,6 +205,13 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginTop: 20,
     marginBottom: 12,
+  },
+  groupHeader: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.primary,
+    marginTop: 12,
+    marginBottom: 4,
   },
   ingredientRow: {
     flexDirection: 'row',
