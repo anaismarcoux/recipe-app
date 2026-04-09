@@ -89,17 +89,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
   },
 
   cycleItem: async (item: GroceryItem) => {
-    let updated: GroceryItem;
-    if (!item.needed) {
-      // inactive → needed
-      updated = { ...item, needed: true, taken: false };
-    } else if (!item.taken) {
-      // needed → taken
-      updated = { ...item, taken: true };
-    } else {
-      // taken → inactive
-      updated = { ...item, needed: false, taken: false };
-    }
+    const updated = { ...item, needed: !item.needed, taken: false };
     await repo.updateGroceryItem(updated);
     set({
       items: get().items.map(i => (i.id === item.id ? updated : i)),

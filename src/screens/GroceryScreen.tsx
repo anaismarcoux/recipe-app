@@ -112,8 +112,7 @@ export default function GroceryScreen({ navigation }: any) {
     }
   };
 
-  const neededCount = items.filter(i => i.needed && !i.taken).length;
-  const takenCount = items.filter(i => i.taken).length;
+  const neededCount = items.filter(i => i.needed).length;
 
   if (loading) return null;
 
@@ -138,19 +137,13 @@ export default function GroceryScreen({ navigation }: any) {
           </TouchableOpacity>
         ) : (
           <>
-            {(neededCount > 0 || takenCount > 0) ? (
-              <Text style={styles.summaryText}>
-                {neededCount > 0 ? `${neededCount} to buy` : ''}
-                {neededCount > 0 && takenCount > 0 ? '  ·  ' : ''}
-                {takenCount > 0 ? `${takenCount} done` : ''}
-              </Text>
-            ) : (
-              <Text style={styles.summaryText}>Tap items you need this week</Text>
-            )}
+            <Text style={styles.summaryText}>
+              {neededCount > 0 ? `${neededCount} needed` : 'Tap items you need'}
+            </Text>
             <TouchableOpacity onPress={() => setReorderMode(true)} style={styles.reorderBtn}>
               <Ionicons name="swap-vertical" size={18} color={colors.primary} />
             </TouchableOpacity>
-            {(neededCount > 0 || takenCount > 0) && (
+            {neededCount > 0 && (
               <TouchableOpacity onPress={handleReset} style={styles.resetBtn}>
                 <Ionicons name="refresh" size={16} color={colors.primary} />
                 <Text style={styles.resetText}>Reset</Text>
@@ -173,10 +166,7 @@ export default function GroceryScreen({ navigation }: any) {
             .filter(i => i.categoryId === cat.id)
             .sort((a, b) => {
               if (reorderMode) return a.sortOrder - b.sortOrder;
-              if (a.needed && !a.taken && !(b.needed && !b.taken)) return -1;
-              if (b.needed && !b.taken && !(a.needed && !a.taken)) return 1;
-              if (!a.needed && !a.taken && (b.needed || b.taken)) return 1;
-              if (!b.needed && !b.taken && (a.needed || a.taken)) return -1;
+              if (a.needed !== b.needed) return a.needed ? -1 : 1;
               return a.sortOrder - b.sortOrder;
             });
 
@@ -206,7 +196,7 @@ export default function GroceryScreen({ navigation }: any) {
                   />
                   <Text style={[styles.catTitle, { flex: 1 }]}>{cat.name}</Text>
                   <Text style={styles.catCount}>
-                    {catItems.filter(i => i.needed && !i.taken).length}/{catItems.length}
+                    {catItems.filter(i => i.needed).length}/{catItems.length}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -254,19 +244,16 @@ export default function GroceryScreen({ navigation }: any) {
                           }}
                         >
                           <View style={styles.checkbox}>
-                            {!item.needed ? (
-                              <Ionicons name="ellipse-outline" size={22} color="#CCC" />
-                            ) : item.taken ? (
-                              <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
-                            ) : (
-                              <Ionicons name="ellipse-outline" size={22} color={colors.primary} />
-                            )}
+                            <Ionicons
+                              name={item.needed ? 'checkmark-circle' : 'ellipse-outline'}
+                              size={22}
+                              color={item.needed ? colors.primary : '#CCC'}
+                            />
                           </View>
                           <Text
                             style={[
                               styles.itemName,
                               !item.needed && styles.itemInactive,
-                              item.taken && styles.itemTaken,
                             ]}
                           >
                             {item.name}
