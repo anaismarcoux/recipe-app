@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   StyleSheet, View, Text, TextInput, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { generateId } from '../utils/uuid';
 import { colors } from '../constants/colors';
@@ -117,6 +118,20 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
 
   const addSection = () => {
     setItems([...items, { type: 'section', name: '' }]);
+  };
+
+  const moveUp = (index: number) => {
+    if (index <= 0) return;
+    const copy = [...items];
+    [copy[index - 1], copy[index]] = [copy[index], copy[index - 1]];
+    setItems(copy);
+  };
+
+  const moveDown = (index: number) => {
+    if (index >= items.length - 1) return;
+    const copy = [...items];
+    [copy[index], copy[index + 1]] = [copy[index + 1], copy[index]];
+    setItems(copy);
   };
 
   const runningTotal = items.reduce(
@@ -241,6 +256,14 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
           <View key={i} style={{ zIndex: items.length - i }}>
             {item.type === 'section' ? (
               <View style={styles.sectionRow}>
+                <View style={styles.arrowCol}>
+                  <TouchableOpacity onPress={() => moveUp(i)} style={styles.arrowBtn}>
+                    <Ionicons name="chevron-up" size={16} color={i === 0 ? '#CCC' : colors.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => moveDown(i)} style={styles.arrowBtn}>
+                    <Ionicons name="chevron-down" size={16} color={i === items.length - 1 ? '#CCC' : colors.primary} />
+                  </TouchableOpacity>
+                </View>
                 <TextInput
                   style={[styles.input, styles.sectionInput]}
                   placeholder="Section name (e.g. Sauce, Dry ingredients)"
@@ -253,11 +276,23 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
                 </TouchableOpacity>
               </View>
             ) : (
-              <IngredientRow
-                ingredient={item.data}
-                onChange={updated => updateItem(i, { type: 'ingredient', data: updated })}
-                onRemove={() => removeItem(i)}
-              />
+              <View style={styles.ingredientWithArrows}>
+                <View style={styles.arrowCol}>
+                  <TouchableOpacity onPress={() => moveUp(i)} style={styles.arrowBtn}>
+                    <Ionicons name="chevron-up" size={16} color={i === 0 ? '#CCC' : colors.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => moveDown(i)} style={styles.arrowBtn}>
+                    <Ionicons name="chevron-down" size={16} color={i === items.length - 1 ? '#CCC' : colors.primary} />
+                  </TouchableOpacity>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <IngredientRow
+                    ingredient={item.data}
+                    onChange={updated => updateItem(i, { type: 'ingredient', data: updated })}
+                    onRemove={() => removeItem(i)}
+                  />
+                </View>
+              </View>
             )}
           </View>
         ))}
@@ -427,6 +462,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.calorieOrange,
     marginTop: 12,
+  },
+  ingredientWithArrows: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 0,
+  },
+  arrowCol: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 10,
+    paddingRight: 4,
+    gap: 2,
+  },
+  arrowBtn: {
+    padding: 3,
   },
   sectionRow: {
     flexDirection: 'row',
