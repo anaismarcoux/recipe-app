@@ -17,9 +17,10 @@ export default function AllRecipesScreen({ navigation }: any) {
     }, [])
   );
 
-  const filtered = search.trim()
+  const filtered = (search.trim()
     ? recipes.filter(r => r.title.toLowerCase().includes(search.toLowerCase()))
-    : recipes;
+    : recipes
+  ).sort((a, b) => a.title.localeCompare(b.title));
 
   return (
     <View style={styles.container}>
