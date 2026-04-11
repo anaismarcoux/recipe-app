@@ -36,12 +36,16 @@ export default function AllRecipesScreen({ navigation }: any) {
         <FlatList
           data={filtered}
           keyExtractor={item => item.id}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <RecipeCard
-              recipe={item}
-              onPress={() => navigation.navigate('RecipeDetail', { recipeId: item.id })}
-            />
+            <View style={styles.cardWrap}>
+              <RecipeCard
+                recipe={item}
+                onPress={() => navigation.navigate('RecipeDetail', { recipeId: item.id })}
+              />
+            </View>
           )}
         />
       )}
@@ -60,5 +64,11 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: 16,
+  },
+  row: {
+    gap: 12,
+  },
+  cardWrap: {
+    flex: 1,
   },
 });

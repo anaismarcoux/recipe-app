@@ -46,11 +46,11 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 160,
+    height: 120,
   },
   imagePlaceholder: {
     width: '100%',
-    height: 160,
+    height: 120,
     backgroundColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
