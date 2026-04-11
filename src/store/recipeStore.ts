@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Recipe, Ingredient, RecipeWithIngredients } from '../types';
 import * as recipeRepo from '../db/recipeRepository';
+import { getFavoriteRecipes, toggleFavorite as toggleFavoriteRepo } from '../db/recipeRepository';
 import * as ingredientRepo from '../db/ingredientRepository';
 import { generateId } from '../utils/uuid';
 import { uploadImage, isLocalUri } from '../lib/supabase';
@@ -11,6 +12,9 @@ interface RecipeStore {
   loadAll: () => Promise<void>;
   loadByCategory: (categoryId: string) => Promise<void>;
   getWithIngredients: (id: string) => Promise<RecipeWithIngredients | null>;
+  favorites: Recipe[];
+  loadFavorites: () => Promise<void>;
+  toggleFavorite: (recipe: Recipe) => Promise<void>;
   add: (recipe: Omit<Recipe, 'id' | 'createdAt' | 'updatedAt'>, ingredients: Omit<Ingredient, 'id' | 'recipeId'>[]) => Promise<void>;
   update: (recipe: Recipe, ingredients: Omit<Ingredient, 'id' | 'recipeId'>[]) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -18,7 +22,25 @@ interface RecipeStore {
 
 export const useRecipeStore = create<RecipeStore>((set, get) => ({
   recipes: [],
+  favorites: [],
   loading: true,
+
+  loadFavorites: async () => {
+    const favorites = await getFavoriteRecipes();
+    set({ favorites });
+  },
+
+  toggleFavorite: async (recipe: Recipe) => {
+    const newVal = !recipe.isFavorite;
+    await toggleFavoriteRepo(recipe.id, newVal);
+    const updated = { ...recipe, isFavorite: newVal };
+    set({
+      recipes: get().recipes.map(r => r.id === recipe.id ? updated : r),
+      favorites: newVal
+        ? [...get().favorites.filter(r => r.id !== recipe.id), updated]
+        : get().favorites.filter(r => r.id !== recipe.id),
+    });
+  },
 
   loadAll: async () => {
     const recipes = await recipeRepo.getAllRecipes();
@@ -52,6 +74,7 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
       ...recipeData,
       imageUri,
       id: recipeId,
+      isFavorite: false,
       createdAt: now,
       updatedAt: now,
     };

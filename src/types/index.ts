@@ -14,11 +14,11 @@ export interface Recipe {
   imageUri: string | null;
   about: string | null;
   steps: string;
-
   notes: string | null;
   yieldAmount: number | null;
   yieldUnit: string | null;
   totalWeightGrams: number | null;
+  isFavorite: boolean;
   createdAt: string;
   updatedAt: string;
 }

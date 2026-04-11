@@ -13,9 +13,28 @@ function toRecipe(row: any): Recipe {
     yieldAmount: row.yield_amount,
     yieldUnit: row.yield_unit,
     totalWeightGrams: row.total_weight_grams,
+    isFavorite: row.is_favorite ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+export async function getFavoriteRecipes(): Promise<Recipe[]> {
+  const { data, error } = await supabase
+    .from('recipes')
+    .select('*')
+    .eq('is_favorite', true)
+    .order('updated_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(toRecipe);
+}
+
+export async function toggleFavorite(id: string, isFavorite: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('recipes')
+    .update({ is_favorite: isFavorite })
+    .eq('id', id);
+  if (error) throw error;
 }
 
 export async function getAllRecipes(): Promise<Recipe[]> {
@@ -59,6 +78,7 @@ export async function insertRecipe(recipe: Recipe): Promise<void> {
     yield_amount: recipe.yieldAmount,
     yield_unit: recipe.yieldUnit,
     total_weight_grams: recipe.totalWeightGrams,
+    is_favorite: recipe.isFavorite ?? false,
     created_at: recipe.createdAt,
     updated_at: recipe.updatedAt,
   });

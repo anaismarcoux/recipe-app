@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, View, Text, ScrollView, Image, Alert, TouchableOpacity, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import { useRecipeStore } from '../store/recipeStore';
@@ -9,7 +10,7 @@ import { toFraction } from '../utils/calorieCalculator';
 
 export default function RecipeDetailScreen({ route, navigation }: any) {
   const { recipeId } = route.params;
-  const { getWithIngredients, remove } = useRecipeStore();
+  const { getWithIngredients, remove, toggleFavorite } = useRecipeStore();
   const [recipe, setRecipe] = useState<RecipeWithIngredients | null>(null);
 
   useFocusEffect(
@@ -22,6 +23,16 @@ export default function RecipeDetailScreen({ route, navigation }: any) {
     navigation.setOptions({
       headerRight: () => (
         <View style={styles.headerButtons}>
+          <TouchableOpacity
+            onPress={() => recipe && toggleFavorite(recipe)}
+            style={styles.headerBtn}
+          >
+            <Ionicons
+              name={recipe?.isFavorite ? 'bookmark' : 'bookmark-outline'}
+              size={22}
+              color={recipe?.isFavorite ? colors.primary : colors.textSecondary}
+            />
+          </TouchableOpacity>
           <TouchableOpacity onPress={handleEdit} style={styles.headerBtn}>
             <Text style={styles.headerBtnText}>Edit</Text>
           </TouchableOpacity>

@@ -156,11 +156,11 @@ export default function AddEditRecipeScreen({ route, navigation }: any) {
         imageUri,
         about: about.trim() || null,
         steps: steps.trim(),
-
         notes: notes.trim() || null,
         yieldAmount: yieldAmount ? parseFloat(yieldAmount) : null,
         yieldUnit: yieldUnit.trim() || null,
         totalWeightGrams: totalWeight ? parseFloat(totalWeight) : null,
+        isFavorite: false as boolean,
       };
 
       let currentGroup: string | null = null;
